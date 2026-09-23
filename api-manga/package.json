@@ -1,0 +1,49 @@
+{
+  "name": "komikcast-scrapping",
+  "version": "2.1.0",
+  "description": "Advanced Manga API with multi-provider support, advanced data processing pipeline, parallel processing, multi-level caching, and intelligent query building",
+  "main": "src/server.js",
+  "engines": {
+    "node": "22.x",
+    "npm": "9.5.0"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node src/server.js",
+    "dev": "nodemon src/server.js"
+  },
+  "keywords": [
+    "komikcast",
+    "api",
+    "scraping",
+    "manga",
+    "comic",
+    "multi-provider",
+    "data-processing",
+    "parallel-processing",
+    "caching",
+    "query-builder",
+    "data-enrichment"
+  ],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@vercel/node": "^3.0.16",
+    "axios": "^1.6.5",
+    "axios-cookiejar-support": "^4.0.6",
+    "cheerio": "^1.0.0-rc.12",
+    "compression": "^1.8.1",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.1",
+    "express": "^4.18.2",
+    "helmet": "^7.1.0",
+    "nodemon": "^3.0.3",
+    "psl": "^1.9.0",
+    "punycode": "^2.3.1",
+    "querystringify": "^2.2.0",
+    "requires-port": "^1.0.0",
+    "tough-cookie": "^4.1.3",
+    "universalify": "^2.0.1",
+    "url-parse": "^1.5.10"
+  }
+}

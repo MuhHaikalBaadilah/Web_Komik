@@ -1,0 +1,32 @@
+# ---------- Dependencies ----------
+node_modules/
+**/node_modules/
+
+# ---------- Logs (runtime artifact) ----------
+*.log
+logs/
+
+# ---------- Environment ----------
+.env
+.env.local
+.env.*.local
+
+# ---------- Build / deploy output ----------
+.vercel/
+dist/
+build/
+
+# ---------- OS & Editor ----------
+.DS_Store
+Thumbs.db
+desktop.ini
+.vscode/
+.idea/
+*.swp
+*~
+
+# ---------- Local scratch ----------
+_probe*.txt
+*.tmp
+tmp/
+temp/

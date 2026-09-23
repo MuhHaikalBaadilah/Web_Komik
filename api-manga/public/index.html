@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Manga API - Baca manga favorit dari berbagai sumber">
+  <title>Manga API - Browse & Read Manga</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+  <!-- Header -->
+  <header class="header">
+    <div class="container">
+      <a href="/" class="logo">
+        <span class="logo-icon">📚</span>
+        <span class="logo-text">MangaAPI</span>
+      </a>
+      <nav class="nav">
+        <a href="/" class="nav-link active">Home</a>
+        <a href="#popular" class="nav-link">Popular</a>
+        <a href="#genres" class="nav-link">Genres</a>
+        <a href="/dashboard" class="nav-link">Dashboard</a>
+      </nav>
+      <div class="header-actions">
+        <div class="search-box">
+          <input type="text" id="searchInput" placeholder="Cari manga..." autocomplete="off">
+          <button id="searchBtn" class="btn-search">🔍</button>
+        </div>
+        <select id="providerSelect" class="provider-select">
+          <option value="mangadex">MangaDex</option>
+          <option value="komikcast">Komikcast</option>
+          <option value="shinigami">Shinigami</option>
+          <option value="aquareader">Aquareader</option>
+        </select>
+        <button id="themeToggle" class="btn-theme">🌙</button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Hero Section -->
+  <section class="hero">
+    <div class="container">
+      <h1 class="hero-title">Baca Manga Favorit Kamu</h1>
+      <p class="hero-subtitle">Akses ribuan manga dari berbagai sumber dalam satu platform</p>
+      <div class="hero-stats">
+        <div class="stat">
+          <span class="stat-value" id="totalManga">10,000+</span>
+          <span class="stat-label">Manga</span>
+        </div>
+        <div class="stat">
+          <span class="stat-value">4</span>
+          <span class="stat-label">Providers</span>
+        </div>
+        <div class="stat">
+          <span class="stat-value" id="cacheHitRate">0%</span>
+          <span class="stat-label">Cache Hit</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Main Content -->
+  <main class="main">
+    <div class="container">
+      <!-- Latest Section -->
+      <section class="section" id="latest">
+        <div class="section-header">
+          <h2 class="section-title">🆕 Manga Terbaru</h2>
+          <div class="section-controls">
+            <button id="refreshLatest" class="btn-refresh">↻ Refresh</button>
+          </div>
+        </div>
+        <div class="manga-grid" id="latestGrid">
+          <div class="loading-skeleton"></div>
+        </div>
+        <div class="pagination" id="latestPagination"></div>
+      </section>
+
+      <!-- Popular Section -->
+      <section class="section" id="popular">
+        <div class="section-header">
+          <h2 class="section-title">🔥 Popular</h2>
+        </div>
+        <div class="manga-grid" id="popularGrid">
+          <div class="loading-skeleton"></div>
+        </div>
+      </section>
+
+      <!-- Search Results (Hidden by default) -->
+      <section class="section hidden" id="searchResults">
+        <div class="section-header">
+          <h2 class="section-title">🔍 Hasil Pencarian: <span id="searchQuery"></span></h2>
+          <button id="clearSearch" class="btn-secondary">✕ Tutup</button>
+        </div>
+        <div class="manga-grid" id="searchGrid"></div>
+      </section>
+
+      <!-- Manga Detail Modal -->
+      <div class="modal" id="detailModal">
+        <div class="modal-content">
+          <button class="modal-close" id="closeModal">✕</button>
+          <div class="modal-body" id="detailContent"></div>
+        </div>
+      </div>
+
+      <!-- Chapter Reader Modal -->
+      <div class="modal reader-modal" id="readerModal">
+        <div class="reader-header">
+          <button id="closeReader" class="btn-back">← Kembali</button>
+          <span id="chapterTitle" class="chapter-title"></span>
+          <div class="reader-nav">
+            <button id="prevChapter" class="btn-nav">‹ Prev</button>
+            <button id="nextChapter" class="btn-nav">Next ›</button>
+          </div>
+        </div>
+        <div class="reader-content" id="readerContent"></div>
+      </div>
+    </div>
+  </main>
+
+  <!-- Footer -->
+  <footer class="footer">
+    <div class="container">
+      <div class="footer-content">
+        <div class="footer-brand">
+          <span class="logo-icon">📚</span>
+          <span>MangaAPI v2.3.0</span>
+        </div>
+        <div class="footer-links">
+          <a href="/health" target="_blank">API Health</a>
+          <a href="/providers" target="_blank">Providers</a>
+          <a href="/dashboard" target="_blank">Dashboard</a>
+          <a href="https://github.com/KanekiCraynet/api-manga" target="_blank">GitHub</a>
+        </div>
+        <p class="footer-copy">© 2024 MangaAPI - Open Source Project</p>
+      </div>
+    </div>
+  </footer>
+
+  <!-- Toast Notification -->
+  <div id="toast" class="toast"></div>
+
+  <script src="/js/app.js"></script>
+</body>
+</html>

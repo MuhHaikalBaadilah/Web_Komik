@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>KomikuNow - Baca Manga, Manhwa, Manhua Gratis</title>
+    <meta name="description" content="Baca ribuan judul manga, manhwa, dan manhua terbaru secara gratis. Update setiap hari!">
+    <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+</head>
+<body>
+    <!-- Sticky Navbar -->
+    <nav class="navbar">
+        <div class="nav-container">
+            <a href="#" class="logo" onclick="showHome()">
+                <i class="fas fa-book-open"></i> Komiku<span>Now</span>
+            </a>
+            <div class="nav-search">
+                <form onsubmit="handleSearch(event)">
+                    <input type="text" id="searchInput" placeholder="Cari judul komik..." autocomplete="off">
+                    <button type="submit"><i class="fas fa-search"></i></button>
+                </form>
+            </div>
+            <ul class="nav-links">
+                <li><a href="#" onclick="showHome()" class="active">Home</a></li>
+                <li><a href="#" onclick="showLatest()">Terbaru</a></li>
+                <li><a href="#" onclick="showPopular()">Populer</a></li>
+                <li><a href="#" onclick="showBookmarks()" id="bookmarkNavLink" title="Bookmark">
+                    <i class="fas fa-bookmark"></i> <span id="bookmarkCount">0</span>
+                </a></li>
+            </ul>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="container">
+        <!-- Homepage Section -->
+        <section id="homeSection">
+            <!-- Hero Carousel -->
+            <div class="hero-carousel" id="heroCarousel">
+                <div class="hero-track" id="heroTrack">
+                    <!-- Hero slides rendered by JS -->
+                </div>
+                <button class="hero-arrow hero-prev" onclick="heroSlide(-1)"><i class="fas fa-chevron-left"></i></button>
+                <button class="hero-arrow hero-next" onclick="heroSlide(1)"><i class="fas fa-chevron-right"></i></button>
+                <div class="hero-dots" id="heroDots"></div>
+            </div>
+
+            <!-- Update Terbaru -->
+            <div class="section-block">
+                <div class="section-header">
+                    <h2><i class="fas fa-fire"></i> Update Terbaru</h2>
+                    <a href="#" class="view-all" onclick="showLatest()">Lihat semua <i class="fas fa-arrow-right"></i></a>
+                </div>
+                <div class="manga-grid" id="latestGrid">
+                    <!-- Cards rendered by JS -->
+                </div>
+            </div>
+
+            <!-- Populer Minggu Ini -->
+            <div class="section-block">
+                <div class="section-header">
+                    <h2><i class="fas fa-chart-line"></i> Populer Minggu Ini</h2>
+                    <a href="#" class="view-all" onclick="showPopular()">Lihat semua <i class="fas fa-arrow-right"></i></a>
+                </div>
+                <div class="manga-grid" id="popularGrid">
+                    <!-- Cards rendered by JS -->
+                </div>
+            </div>
+
+            <!-- Project Baru -->
+            <div class="section-block">
+                <div class="section-header">
+                    <h2><i class="fas fa-sparkles"></i> Project Baru</h2>
+                    <a href="#" class="view-all" onclick="showRecommended()">Lihat semua <i class="fas fa-arrow-right"></i></a>
+                </div>
+                <div class="manga-grid" id="recommendedGrid">
+                    <!-- Cards rendered by JS -->
+                </div>
+            </div>
+
+            <!-- Genre Pills -->
+            <div class="section-block">
+                <div class="section-header">
+                    <h2><i class="fas fa-tags"></i> Jelajahi Genre</h2>
+                </div>
+                <div class="genre-pills" id="genrePills">
+                    <button class="genre-pill" onclick="searchByGenre('Action')">⚔️ Action</button>
+                    <button class="genre-pill" onclick="searchByGenre('Romance')">💕 Romance</button>
+                    <button class="genre-pill" onclick="searchByGenre('Comedy')">😂 Comedy</button>
+                    <button class="genre-pill" onclick="searchByGenre('Fantasy')">🐉 Fantasy</button>
+                    <button class="genre-pill" onclick="searchByGenre('Drama')">🎭 Drama</button>
+                    <button class="genre-pill" onclick="searchByGenre('Adventure')">🗺️ Adventure</button>
+                    <button class="genre-pill" onclick="searchByGenre('Horror')">👻 Horror</button>
+                    <button class="genre-pill" onclick="searchByGenre('Martial Arts')">🥋 Martial Arts</button>
+                    <button class="genre-pill" onclick="searchByGenre('School Life')">🏫 School Life</button>
+                    <button class="genre-pill" onclick="searchByGenre('Sci-Fi')">🚀 Sci-Fi</button>
+                    <button class="genre-pill" onclick="searchByGenre('Mystery')">🔍 Mystery</button>
+                    <button class="genre-pill" onclick="searchByGenre('Sports')">⚽ Sports</button>
+                </div>
+            </div>
+        </section>
+
+        <!-- Latest Section -->
+        <section id="latestSection" style="display: none;">
+            <div class="section-header">
+                <h2><i class="fas fa-fire"></i> Update Terbaru</h2>
+                <div class="page-controls">
+                    <button class="btn-icon" onclick="changeLatestPage(-1)" id="prevPage" title="Sebelumnya">
+                        <i class="fas fa-chevron-left"></i>
+                    </button>
+                    <span id="pageInfo" class="page-info">Hal 1</span>
+                    <button class="btn-icon" onclick="changeLatestPage(1)" id="nextPage" title="Berikutnya">
+                        <i class="fas fa-chevron-right"></i>
+                    </button>
+                </div>
+            </div>
+            <div class="manga-grid" id="latestFullGrid">
+                <!-- Cards rendered by JS -->
+            </div>
+        </section>
+
+        <!-- Search Results Section -->
+        <section id="searchSection" style="display: none;">
+            <div class="section-header">
+                <h2><i class="fas fa-search"></i> Hasil Pencarian: <span id="searchQueryLabel"></span></h2>
+            </div>
+            <div class="manga-grid" id="searchGrid">
+                <!-- Cards rendered by JS -->
+            </div>
+        </section>
+
+        <!-- Popular Section -->
+        <section id="popularSection" style="display: none;">
+            <div class="section-header">
+                <h2><i class="fas fa-chart-line"></i> Komik Populer</h2>
+            </div>
+            <div class="manga-grid" id="popularFullGrid">
+                <!-- Cards rendered by JS -->
+            </div>
+        </section>
+
+        <!-- Recommended Section -->
+        <section id="recommendedSection" style="display: none;">
+            <div class="section-header">
+                <h2><i class="fas fa-sparkles"></i> Komik Rekomendasi</h2>
+            </div>
+            <div class="manga-grid" id="recommendedFullGrid">
+                <!-- Cards rendered by JS -->
+            </div>
+        </section>
+
+        <!-- Bookmarks Section -->
+        <section id="bookmarksSection" style="display: none;">
+            <div class="section-header">
+                <h2><i class="fas fa-bookmark"></i> Bookmark Saya</h2>
+                <button class="btn-pagination" onclick="clearAllBookmarks()" id="clearBookmarksBtn" style="display: none;">
+                    <i class="fas fa-trash"></i> Hapus Semua
+                </button>
+            </div>
+            <div class="manga-grid" id="bookmarksGrid">
+                <!-- Cards rendered by JS -->
+            </div>
+        </section>
+    </main>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="footer-content">
+            <div class="footer-brand">
+                <a href="#" class="logo" onclick="showHome()">
+                    <i class="fas fa-book-open"></i> Komiku<span>Now</span>
+                </a>
+                <p>Platform baca manga, manhwa, dan manhua terbaru.</p>
+            </div>
+            <div class="footer-links">
+                <h4>Navigasi</h4>
+                <a href="#" onclick="showHome()">Home</a>
+                <a href="#" onclick="showLatest()">Terbaru</a>
+                <a href="#" onclick="showPopular()">Populer</a>
+                <a href="#" onclick="showBookmarks()">Bookmark</a>
+            </div>
+            <div class="footer-links">
+                <h4>Genre</h4>
+                <a href="#" onclick="searchByGenre('Action')">Action</a>
+                <a href="#" onclick="searchByGenre('Romance')">Romance</a>
+                <a href="#" onclick="searchByGenre('Fantasy')">Fantasy</a>
+                <a href="#" onclick="searchByGenre('Comedy')">Comedy</a>
+            </div>
+        </div>
+        <div class="footer-bottom">
+            <p>© 2026 KomikuNow. Dibuat untuk pembelajaran. Semua konten milik pemiliknya masing-masing.</p>
+        </div>
+    </footer>
+
+    <!-- Detail Modal -->
+    <div class="modal-overlay" id="detailModal" style="display: none;">
+        <div class="modal-content detail-modal">
+            <button class="modal-close" onclick="closeModal('detailModal')"><i class="fas fa-times"></i></button>
+            <div id="detailContent" class="detail-content">
+                <!-- Detail rendered by JS -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Reader Modal -->
+    <div class="modal-overlay reader-modal-overlay" id="readerModal" style="display: none;">
+        <div class="reader-content">
+            <div class="reader-header" id="readerHeader">
+                <button class="btn-back" onclick="closeModal('readerModal')">
+                    <i class="fas fa-arrow-left"></i>
+                </button>
+                <div class="reader-title" id="readerTitle">Chapter</div>
+                <div class="reader-controls">
+                    <button class="btn-icon" onclick="changeChapter(-1)" title="Chapter sebelumnya">
+                        <i class="fas fa-chevron-left"></i>
+                    </button>
+                    <button class="btn-icon" onclick="changeChapter(1)" title="Chapter berikutnya">
+                        <i class="fas fa-chevron-right"></i>
+                    </button>
+                </div>
+            </div>
+            <div class="reader-progress"><div class="reader-progress-fill" id="readerProgressFill"></div></div>
+            <div class="reader-panels" id="readerPanels">
+                <!-- Chapter images rendered by JS -->
+            </div>
+            <div class="reader-footer">
+                <button class="btn-secondary" onclick="changeChapter(-1)">
+                    <i class="fas fa-chevron-left"></i> Ch. Sebelumnya
+                </button>
+                <span class="reader-chapter-label" id="readerChapterLabel">Ch. 1</span>
+                <button class="btn-secondary" onclick="changeChapter(1)">
+                    Ch. Berikutnya <i class="fas fa-chevron-right"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Loading Spinner -->
+    <div class="loading-spinner" id="loadingSpinner" style="display: none;">
+        <div class="spinner"></div>
+        <p>Memuat data...</p>
+    </div>
+
+    <!-- Toast Notification -->
+    <div class="toast" id="toast"></div>
+
+    <!-- Error Toast -->
+    <div class="error-toast" id="errorToast"></div>
+
+    <script src="app.js"></script>
+</body>
+</html>
