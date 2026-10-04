@@ -71,12 +71,19 @@ const apiRequest = async (endpoint, params = {}) => {
  */
 const extractCoverUrl = (manga) => {
   const coverArt = manga.relationships?.find(r => r.type === 'cover_art');
-  if (coverArt?.attributes?.fileName) {
-    return `${COVER_BASE_URL}/${manga.id}/${coverArt.attributes.fileName}`;
-  }
-  return '';
+  const fileName = coverArt?.attributes?.fileName || '';
+  if (!fileName) return '';
+  // fileName dari API SUDAH mengandung ekstensi (.jpg/.png) -> URL penuh valid.
+  return `${COVER_BASE_URL}/${manga.id}/${fileName}`;
 };
 
+// URL thumbnail kecil (resmi MangaDex): ganti ekstensi menjadi .256.jpg,
+// BUKAN ditempel (format "...png.256.jpg" salah dan 404 untuk sebagian file).
+const extractCoverThumb = (manga) => {
+  const full = extractCoverUrl(manga);
+  if (!full) return '';
+  return full.replace(/\.(jpe?g|png|gif|webp)$/i, '.256.jpg');
+};
 /**
  * Extract author name from manga relationships
  * @param {object} manga - Manga object with relationships
@@ -140,6 +147,7 @@ const transformManga = (manga) => {
     title: getLocalizedTitle(attributes),
     href: `/manga/${manga.id}`,
     thumbnail: extractCoverUrl(manga),
+    coverThumb: extractCoverThumb(manga),
     type: attributes.originalLanguage === 'ja' ? 'Manga' : 
           attributes.originalLanguage === 'ko' ? 'Manhwa' : 
           attributes.originalLanguage === 'zh' ? 'Manhua' : 'Comic',
@@ -329,6 +337,7 @@ const getComicDetail = async (url) => {
       genre: genres,
       description: getLocalizedDescription(attributes),
       thumbnail: extractCoverUrl(manga),
+      coverThumb: extractCoverThumb(manga),
       chapter: chapters
     };
   } catch (error) {

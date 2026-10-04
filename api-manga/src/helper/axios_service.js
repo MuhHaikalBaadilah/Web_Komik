@@ -47,6 +47,10 @@ const getNextUserAgent = () => {
 
 /**
  * Detect if response is blocked by Cloudflare
+ * PENTING: JSON API (mis. api.shngm.io) hampir selalu di belakang Cloudflare
+ * CDN (header cf-ray / server: cloudflare) meski isinya 200 OK normal.
+ * Jadi deteksi hanya boleh positif bila ada BUKTI tantangan (challenge HTML /
+ * captcha) ATAU status error khas CF — bukan sekadar presence header CF.
  * @param {object} response - Axios response
  * @returns {object} Detection result
  */
@@ -64,26 +68,14 @@ const detectCloudflareBlock = (response) => {
   const contentType = headers?.['content-type'] || '';
   const isHtml = contentType.includes('text/html');
 
-  // Check status codes
-  if (CLOUDFLARE_PATTERNS.statusCodes.includes(status)) {
-    result.confidence += 30;
-    result.details.statusCode = status;
-  }
-
-  // Check Cloudflare headers
-  if (headers?.['cf-ray'] || headers?.['cf-cache-status'] || headers?.['server']?.toLowerCase().includes('cloudflare')) {
-    result.confidence += 20;
-    result.details.cloudflareHeaders = true;
-  }
-
-  // Check HTML content for Cloudflare patterns
+  // HTML berisi pola challenge/captcha = bukti kuat sedang diblokir.
   if (isHtml && typeof data === 'string') {
     const dataLower = data.toLowerCase();
 
     // Check title patterns
     for (const title of CLOUDFLARE_PATTERNS.titles) {
       if (dataLower.includes(title.toLowerCase())) {
-        result.confidence += 25;
+        result.confidence += 45;
         result.blockType = 'challenge';
         result.details.matchedTitle = title;
         break;
@@ -92,6 +84,9 @@ const detectCloudflareBlock = (response) => {
 
     // Check body text patterns
     for (const pattern of CLOUDFLARE_PATTERNS.bodyTexts) {
+      // 'cloudflare' saja terlalu umum (ada di footer biasa) -> abaikan bila
+      // status 200 dan tidak ada pola challenge lain.
+      if (pattern === 'cloudflare' && status === 200 && !result.details.matchedTitle) continue;
       if (dataLower.includes(pattern.toLowerCase())) {
         result.confidence += 15;
         result.details.matchedPattern = pattern;
@@ -104,6 +99,17 @@ const detectCloudflareBlock = (response) => {
       result.blockType = 'captcha';
       result.details.captchaDetected = true;
     }
+  }
+
+  // Header CF + status error khas (403/503/5xx CF) = indikasi diblokir.
+  const hasCfHeader = !!(headers?.['cf-ray'] || headers?.['cf-cache-status'] || headers?.['server']?.toLowerCase().includes('cloudflare'));
+  if (hasCfHeader && CLOUDFLARE_PATTERNS.statusCodes.includes(status)) {
+    result.confidence += 40;
+    result.details.statusCode = status;
+    result.details.cloudflareHeaders = true;
+  } else if (CLOUDFLARE_PATTERNS.statusCodes.includes(status)) {
+    result.confidence += 30;
+    result.details.statusCode = status;
   }
 
   // Determine if blocked based on confidence
@@ -360,12 +366,17 @@ const AxiosService = async (url, options = {}) => {
           throw new NetworkError(`Request failed with status code ${res.status}`);
         }
 
-        // Verify response if enabled
+        // Verify response if enabled — TAPI lewati verifikasi ketat untuk
+        // respons JSON (JSON API di belakang Cloudflare CDN tetap valid).
         if (verify) {
-          const verification = verifyResponse(res, verifyOptions);
-          if (!verification.isValid) {
-            const issues = verification.issues.join(', ');
-            throw new NetworkError(`Response verification failed: ${issues}`);
+          const ct = String(res.headers?.['content-type'] || '');
+          const isJsonResp = ct.includes('application/json') || (res && typeof res.data === 'object');
+          if (!isJsonResp) {
+            const verification = verifyResponse(res, verifyOptions);
+            if (!verification.isValid) {
+              const issues = verification.issues.join(', ');
+              throw new NetworkError(`Response verification failed: ${issues}`);
+            }
           }
         }
 

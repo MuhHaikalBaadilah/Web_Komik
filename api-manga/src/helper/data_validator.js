@@ -99,6 +99,7 @@ const normalizeComicItem = (item, baseUrl = '') => {
     title: sanitizeString(item.title || ''),
     href: normalizeUrl(item.href || '', baseUrl),
     thumbnail: item.thumbnail || '',
+    coverThumb: item.coverThumb || '',
     type: sanitizeString(item.type || ''),
     chapter: sanitizeString(item.chapter || ''),
     rating: normalizeRating(item.rating),

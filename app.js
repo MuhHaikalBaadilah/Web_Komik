@@ -357,22 +357,36 @@ async function apiFetch(endpoint) {
 }
 
 async function fetchLatest(page = 1) {
-    return apiFetch(`/terbaru?page=${page}&provider=${state.currentProvider}`);
+    const data = await apiFetch(`/terbaru?page=${page}&provider=${state.currentProvider}`);
+    // /terbaru mengembalikan objek paginasi {current_page, length_page, data:[...]}
+    // agar konsisten dengan fetch lain, kembalikan array + simpan info halaman.
+    if (data && Array.isArray(data.data)) {
+        state.latestTotalPages = data.length_page || 1;
+        return data.data;
+    }
+    return data?.data || [];
 }
 
 async function searchManga(keyword) {
     const data = await apiFetch(`/search?keyword=${encodeURIComponent(keyword)}&provider=${state.currentProvider}`);
-    return data?.data || [];
+    const d = data?.data;
+    // /search bisa mengembalikan {data:[...]} atau {data:{data:[...]}}
+    if (d && Array.isArray(d.data)) return d.data;
+    return d || [];
 }
 
 async function fetchPopular() {
     const data = await apiFetch(`/popular?provider=${state.currentProvider}`);
-    return data?.data || [];
+    const d = data?.data;
+    if (d && Array.isArray(d.data)) return d.data;
+    return d || [];
 }
 
 async function fetchRecommended() {
     const data = await apiFetch(`/recommended?provider=${state.currentProvider}`);
-    return data?.data || [];
+    const d = data?.data;
+    if (d && Array.isArray(d.data)) return d.data;
+    return d || [];
 }
 
 async function fetchDetail(mangaUrl, provider) {
@@ -390,9 +404,56 @@ async function fetchChapter(chapterUrl, provider) {
 // Rendering
 // =============================================
 
+function coverCandidates(manga, detail) {
+    const src = detail || manga || {};
+    // thumbnail (penuh) DULU — paling sering valid; varian kecil hanya cadangan.
+    const list = [
+        src.thumbnail,
+        src.cover,
+        manga && manga.thumbnail,
+        detail && detail.thumbnail,
+        src.coverThumb,
+        src.cover_thumb,
+        manga && manga.coverThumb,
+        detail && detail.coverThumb,
+    ].filter(u => typeof u === 'string' && u && !u.includes('nopicture'));
+    // Tambah varian ukuran resmi MangaDex (.256.jpg): ganti ekstensi,
+    // BUKAN ditempel (format "...png.256.jpg" salah dan 404 untuk sebagian file).
+    const extra = [];
+    for (const u of list) {
+        if (u.includes('uploads.mangadex.org/covers/') && !u.endsWith('.256.jpg')) {
+            extra.push(u.replace(/\.(jpe?g|png|gif|webp)$/i, '.256.jpg'));
+        }
+    }
+    const seen = new Set();
+    return list.concat(extra).filter(u => !seen.has(u) && seen.add(u));
+}
+
+function coverImgTag(manga, detail, title, cls, extraAttrs) {
+    const cands = coverCandidates(manga, detail);
+    const t = safeText(title, 'Unknown');
+    if (!cands.length) return `<div class="no-image${cls ? ' ' + cls : ''}"><i class="fas fa-book-open"></i></div>`;
+    const chain = JSON.stringify(cands).replace(/"/g, '&quot;');
+    return `<img src="${cands[0]}" alt="${t}" loading="lazy" referrerpolicy="no-referrer" data-cands="${chain}" data-idx="0"${extraAttrs ? ' ' + extraAttrs : ''} onerror="coverImgFail(this)">`;
+}
+
+// Dipanggil saat <img> cover gagal dimuat: coba URL cadangan berikutnya,
+// terakhir tampilkan placeholder bila semua gagal.
+function coverImgFail(img) {
+    try {
+        const cands = JSON.parse((img.getAttribute('data-cands') || '').replace(/&quot;/g, '"') || '[]');
+        const idx = parseInt(img.getAttribute('data-idx') || '0', 10) + 1;
+        if (idx < cands.length) {
+            img.setAttribute('data-idx', String(idx));
+            img.src = cands[idx];
+            return;
+        }
+    } catch (e) { /* abaikan, tampilkan placeholder */ }
+    const cls = img.getAttribute('data-noimg-cls') || 'no-image';
+    img.parentElement.innerHTML = `<div class="${cls}"><i class="fas fa-book-open"></i></div>`;
+}
 function createMangaCard(manga, index, showHot = false) {
     const title = safeText(manga.title, 'Unknown');
-    const thumb = manga.thumbnail || manga.cover || '';
     const type = safeText(manga.type, 'Manga');
     const chapter = safeText(manga.chapter, '');
     const rating = manga.rating ? parseFloat(manga.rating).toFixed(1) : null;
@@ -402,10 +463,8 @@ function createMangaCard(manga, index, showHot = false) {
 
     const statusClass = getStatusClass(status);
 
-    let coverHtml = `<div class="no-image"><i class="fas fa-book-open"></i></div>`;
-    if (thumb && !thumb.includes('nopicture')) {
-        coverHtml = `<img src="${thumb}" alt="${title}" loading="lazy" onerror="this.parentElement.innerHTML='<div class=\\'no-image\\'><i class=\\'fas fa-book-open\\'></i></div>'">`;
-    }
+    // Fallback berlapis: thumbnail -> coverThumb -> varian .256 MangaDex.
+    const coverHtml = coverImgTag(manga, null, title, '');
 
     return `
         <div class="manga-card" onclick="openDetail('${encodeURIComponent(href)}')" style="animation-delay: ${index * 0.04}s">
@@ -446,16 +505,16 @@ function renderHeroSlides() {
     if (!track || !state.heroData.length) return;
 
     track.innerHTML = state.heroData.map((manga, i) => {
-        const thumb = manga.thumbnail || manga.cover || '';
         const title = safeText(manga.title, 'Unknown');
         const href = manga.href || '';
         const rating = manga.rating ? parseFloat(manga.rating).toFixed(1) : null;
         const type = safeText(manga.type, 'Manga');
         const genres = safeText(manga.genre, '');
-        
+        const heroImg = coverImgTag(manga, null, title, '');
+
         return `
             <div class="hero-slide" onclick="openDetail('${encodeURIComponent(href)}')">
-                ${thumb && !thumb.includes('nopicture') ? `<img src="${thumb}" alt="${title}">` : ''}
+                ${heroImg}
                 <div class="hero-slide-content">
                     <div class="hero-slide-badges">
                         ${rating ? `<span class="hero-slide-badge rating">⭐ ${rating}</span>` : ''}
@@ -556,21 +615,26 @@ function showRecommended() {
 async function loadHome() {
     showLoading(true);
     try {
-        // Provider utama = shinigami; bila gagal (mis. diblokir Cloudflare dari
-        // IP cloud), otomatis fallback ke mangadex agar komik tetap muncul.
-        let data = null;
-        try {
-            data = await fetchLatest(1);
-        } catch (e) {
-            console.warn('[KomikuNow] provider utama gagal, fallback ke mangadex:', e?.message);
+        // Urutan provider: shinigami dulu (cover + komik Indo), lalu mangadex.
+        // Catatan: /terbaru mengembalikan OBJECT paginasi {data:[...]},
+        // sedangkan fetchLatest() sudah menormalkan jadi ARRAY.
+        let items = [];
+        for (const prov of ['shinigami', 'mangadex']) {
+            state.currentProvider = prov;
+            try {
+                const arr = await fetchLatest(1);
+                if (arr && arr.length) { items = arr; break; }
+                console.warn('[KomikuNow] provider ' + prov + ' kosong, coba berikutnya');
+            } catch (e) {
+                console.warn('[KomikuNow] provider ' + prov + ' gagal:', e?.message);
+            }
         }
-        if (!data || !(data?.data || []).length) {
-            state.currentProvider = 'mangadex';
-            try { data = await fetchLatest(1); }
-            catch (e) { console.warn('[KomikuNow] fallback mangadex gagal:', e?.message); }
+        if (!items.length) {
+            try { console.error('[KomikuNow] API_BASE yang dipakai =', (window.KOMIKUNOW_CONFIG && window.KOMIKUNOW_CONFIG.API_BASE)); } catch (e) {}
+            showToast('Gagal memuat data home.', true);
+            return;
         }
         // Hero = data terbaru paling top 5
-        const items = data?.data || [];
         state.heroData = items.slice(0, 5);
         renderHeroSlides();
         startHeroAutoPlay();
@@ -597,9 +661,8 @@ async function loadHome() {
 async function loadLatestGrid() {
     showLoading(true);
     try {
-        const data = await fetchLatest(state.latestPage);
-        state.latestTotalPages = data?.length_page || 1;
-        const comics = data?.data || [];
+        // fetchLatest() sudah mengembalikan ARRAY + mengisi state.latestTotalPages.
+        const comics = await fetchLatest(state.latestPage);
 
         document.getElementById('pageInfo').textContent = `Hal ${state.latestPage} / ${state.latestTotalPages}`;
         document.getElementById('prevPage').disabled = state.latestPage <= 1;
@@ -732,7 +795,6 @@ async function openDetail(encodedHref) {
 function renderDetailModal(detail) {
     const container = document.getElementById('detailContent');
     const title = safeText(detail.title, 'Unknown');
-    const thumb = detail.thumbnail || detail.cover || '';
     const type = safeText(detail.type, '');
     const status = safeText(detail.status, '');
     const rating = detail.rating ? parseFloat(detail.rating).toFixed(1) : null;
@@ -778,10 +840,8 @@ function renderDetailModal(detail) {
             </div>
         </div>` : `<div class="empty-state"><p>Belum ada chapter.</p></div>`;
 
-    let coverHtml = `<div class="no-image detail-no-image"><i class="fas fa-book-open"></i></div>`;
-    if (thumb && !thumb.includes('nopicture')) {
-        coverHtml = `<img src="${thumb}" alt="${title}" onerror="this.parentElement.innerHTML='<div class=\\'no-image detail-no-image\\'><i class=\\'fas fa-book-open\\'></i></div>'">`;
-    }
+    let coverHtml = coverImgTag(state.currentDetail || null, detail, title, 'detail-no-image');
+    coverHtml = coverHtml.replace('data-idx="0"', 'data-idx="0" data-noimg-cls="no-image detail-no-image"');
 
     container.innerHTML = `
         <div class="detail-header">
@@ -869,7 +929,7 @@ function renderReaderChapter(chapter) {
     }
 
     panelContainer.innerHTML = panels.map((url, i) =>
-        `<img src="${url}" alt="Page ${i + 1}" loading="lazy" onerror="this.style.display='none'">`
+        `<img src="${url}" alt="Page ${i + 1}" loading="lazy" referrerpolicy="no-referrer" onerror="this.style.display='none'">`
     ).join('');
 
     const reader = document.querySelector('.reader-content');
