@@ -556,20 +556,34 @@ function showRecommended() {
 async function loadHome() {
     showLoading(true);
     try {
+        // Provider utama = shinigami; bila gagal (mis. diblokir Cloudflare dari
+        // IP cloud), otomatis fallback ke mangadex agar komik tetap muncul.
+        let data = null;
+        try {
+            data = await fetchLatest(1);
+        } catch (e) {
+            console.warn('[KomikuNow] provider utama gagal, fallback ke mangadex:', e?.message);
+        }
+        if (!data || !(data?.data || []).length) {
+            state.currentProvider = 'mangadex';
+            try { data = await fetchLatest(1); }
+            catch (e) { console.warn('[KomikuNow] fallback mangadex gagal:', e?.message); }
+        }
         // Hero = data terbaru paling top 5
-        const data = await fetchLatest(1);
         const items = data?.data || [];
         state.heroData = items.slice(0, 5);
         renderHeroSlides();
         startHeroAutoPlay();
 
-        // Homepage grids
+        // Homepage grids (provider aktif saat ini)
         renderMangaGrid('latestGrid', items.slice(0, 12));
-        
-        const popular = await fetchPopular();
+
+        let popular = [];
+        try { popular = await fetchPopular(); } catch (e) { console.warn('[KomikuNow] popular gagal:', e?.message); }
         renderMangaGrid('popularGrid', popular.slice(0, 12), true);
-        
-        const recommended = await fetchRecommended();
+
+        let recommended = [];
+        try { recommended = await fetchRecommended(); } catch (e) { console.warn('[KomikuNow] recommended gagal:', e?.message); }
         renderMangaGrid('recommendedGrid', recommended.slice(0, 12));
     } catch (err) {
         console.error('Home load error:', err);

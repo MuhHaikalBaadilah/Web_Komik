@@ -2,6 +2,22 @@
   "version": 0,
   "deployments": [
     {
+      "id": "komikcast-scrapping-qmqo5z",
+      "environment": "preview",
+      "provider": "openpouch-run",
+      "status": "live",
+      "url": "https://komikcast-scrapping-qmqo5z.openpouch.sh",
+      "commit": "6cbc45dbcc78fc8c729eb54457855c727792ed50",
+      "deployedAt": "2026-10-04T13:19:48.809Z",
+      "notes": "instant preview — expires 2026-10-07T13:19:23.658Z; private save link stored in .openpouch/claim.json",
+      "cliVersion": "0.4.0",
+      "kind": "dynamic",
+      "framework": "node",
+      "startCommand": "node src/server.js",
+      "healthStatus": "healthy",
+      "expiresAt": "2026-10-07T13:19:23.658Z"
+    },
+    {
       "id": "komikcast-scrapping-hx1kc0",
       "environment": "preview",
       "provider": "openpouch-run",
@@ -9,6 +25,20 @@
       "url": "https://komikcast-scrapping-hx1kc0.openpouch.sh",
       "commit": "75bf171837b150c6babacea56a184832e76a0635",
       "deployedAt": "2026-10-04T12:52:14.170Z",
+      "smoke": [
+        {
+          "name": "GET / expects 200",
+          "url": "https://komikcast-scrapping-hx1kc0.openpouch.sh/",
+          "passed": true,
+          "detail": "received 200"
+        },
+        {
+          "name": "GET /health expects 200",
+          "url": "https://komikcast-scrapping-hx1kc0.openpouch.sh/health",
+          "passed": true,
+          "detail": "received 200"
+        }
+      ],
       "notes": "instant preview — expires 2026-10-07T12:51:50.016Z; private save link stored in .openpouch/claim.json",
       "cliVersion": "0.4.0",
       "kind": "dynamic",

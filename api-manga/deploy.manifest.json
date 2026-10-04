@@ -8,16 +8,11 @@
     "startCommand": "node src/server.js"
   },
   "env": [],
-  "healthcheck": {
-    "path": "/health",
-    "expectStatus": 200,
-    "timeoutMs": 10000
-  },
   "environments": {
     "preview": {
       "provider": "openpouch-run",
-      "serviceId": "komikcast-scrapping-hx1kc0",
-      "url": "https://komikcast-scrapping-hx1kc0.openpouch.sh"
+      "serviceId": "komikcast-scrapping-qmqo5z",
+      "url": "https://komikcast-scrapping-qmqo5z.openpouch.sh"
     }
   }
 }

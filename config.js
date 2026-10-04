@@ -17,7 +17,7 @@
     //  ⚠️ Deployment saat ini memakai openpouch (preview gratis 72 jam).
     //     Setiap kali API di-redeploy, URL-nya berubah -> perbarui nilai ini.
     // -----------------------------------------------------------------
-    var PRODUCTION_API_BASE = 'https://komikcast-scrapping-hx1kc0.openpouch.sh';
+    var PRODUCTION_API_BASE = 'https://komikcast-scrapping-qmqo5z.openpouch.sh';
 
     var STORAGE_KEY = 'komiku_api_v3';
 
@@ -52,9 +52,8 @@
     window.KOMIKUNOW_CONFIG = {
         API_BASE: apiBase,
         DEFAULT_API_BASE: (fallback + '').replace(/\/+$/, ''),
-        // Provider default: mangadex (API resmi, bisa diakses dari cloud/datacenter).
-        // Provider 'shinigami' sering diblokir Cloudflare saat API di-host di cloud.
-        DEFAULT_PROVIDER: 'mangadex'
+        // Provider default: shinigami (cover lengkap, komik Indonesia).
+        DEFAULT_PROVIDER: 'shinigami'
     };
     try { console.info('[KomikuNow] API_BASE =', apiBase); } catch (e) { /* ignore */ }
 })();

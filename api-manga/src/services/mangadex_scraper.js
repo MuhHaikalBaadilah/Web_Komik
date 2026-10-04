@@ -72,7 +72,7 @@ const apiRequest = async (endpoint, params = {}) => {
 const extractCoverUrl = (manga) => {
   const coverArt = manga.relationships?.find(r => r.type === 'cover_art');
   if (coverArt?.attributes?.fileName) {
-    return `${COVER_BASE_URL}/${manga.id}/${coverArt.attributes.fileName}.256.jpg`;
+    return `${COVER_BASE_URL}/${manga.id}/${coverArt.attributes.fileName}`;
   }
   return '';
 };
