@@ -19,7 +19,10 @@
     // -----------------------------------------------------------------
     var PRODUCTION_API_BASE = 'https://komikcast-scrapping-hx1kc0.openpouch.sh';
 
-    var STORAGE_KEY = 'komikunow_api_base';
+    var STORAGE_KEY = 'komikunow_api_base_v2';
+    // Bersihkan override basi dari versi lama (mis. URL API yang sudah mati),
+    // supaya tidak menimpa PRODUCTION_API_BASE yang baru.
+    try { localStorage.removeItem('komikunow_api_base'); } catch (e) { /* ignore */ }
     var params = new URLSearchParams(window.location.search);
     var override = params.get('api');
 
@@ -48,8 +51,10 @@
 
     window.KOMIKUNOW_CONFIG = {
         API_BASE: apiBase,
+        DEFAULT_API_BASE: fallback,
         // Provider default: mangadex (API resmi, bisa diakses dari cloud/datacenter).
         // Provider 'shinigami' sering diblokir Cloudflare saat API di-host di cloud.
         DEFAULT_PROVIDER: 'mangadex'
     };
+    try { console.info('[KomikuNow] API_BASE =', apiBase); } catch (e) { /* ignore */ }
 })();
