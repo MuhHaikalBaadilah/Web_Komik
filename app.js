@@ -589,6 +589,7 @@ async function loadHome() {
         renderMangaGrid('recommendedGrid', recommended.slice(0, 12));
     } catch (err) {
         console.error('Home load error:', err);
+        console.error('[KomikuNow] API_BASE yang dipakai =', (window.KOMIKUNOW_CONFIG && window.KOMIKUNOW_CONFIG.API_BASE));
         showToast('Gagal memuat data home.', true);
     } finally {
         showLoading(false);

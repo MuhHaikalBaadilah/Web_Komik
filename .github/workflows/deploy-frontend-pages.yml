@@ -1,8 +1,5 @@
 name: Deploy Frontend to GitHub Pages
 
-# Frontend dipublikasikan ke branch `gh-pages`, yang menjadi sumber
-# GitHub Pages untuk repo ini. Setiap perubahan file frontend di `main`
-# akan otomatis mem-publish ulang isi branch gh-pages.
 on:
   push:
     branches: [main, master]
@@ -11,6 +8,7 @@ on:
       - 'style.css'
       - 'app.js'
       - 'config.js'
+      - '.nojekyll'
       - '.github/workflows/deploy-frontend-pages.yml'
   workflow_dispatch:
 
@@ -30,6 +28,7 @@ jobs:
 
       - name: Assemble static site
         run: |
+          rm -rf _site
           mkdir -p _site
           cp index.html style.css app.js config.js _site/
           touch _site/.nojekyll
