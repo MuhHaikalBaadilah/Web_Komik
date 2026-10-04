@@ -74,6 +74,10 @@ SCRAPER/
 
 ## 🌐 Hosting Gratis (Deploy Online)
 
+> **Status deploy:**
+> - ✅ **Frontend LIVE** → <https://muhhaikalbaadilah.github.io/Web_Komik/> (hosting gratis di GitHub Pages, sumber branch `gh-pages`).
+> - ⏳ **API belum di-deploy** → ikuti **Langkah 1** sekali saja, lalu isi URL-nya (Langkah 2). Tanpa ini, halaman akan tampil tapi data komik belum muncul.
+
 Ada 2 bagian yang perlu di-host: **frontend** (statis) dan **API** (Node.js). Berikut skema gratis yang sudah disiapkan di repo ini:
 
 | Bagian | Platform | Biaya | Kenapa |
@@ -113,12 +117,16 @@ var PRODUCTION_API_BASE = 'https://komikunow-api.vercel.app';
 
 > Tanpa mengubah file pun bisa: buka frontend dengan `?api=https://komikunow-api.vercel.app` (nilainya disimpan di localStorage).
 
-### Langkah 3 — Deploy Frontend ke GitHub Pages
+### Langkah 3 — Deploy Frontend ke GitHub Pages (sudah otomatis)
 
-1. Push perubahan ke branch `main`.
-2. Di GitHub buka **Settings → Pages → Build and deployment → Source: GitHub Actions**.
-3. Workflow `.github/workflows/deploy-frontend-pages.yml` akan otomatis berjalan dan mem-publish frontend.
-4. Situs live di: `https://<username>.github.io/<nama-repo>/`
+GitHub Pages repo ini sudah **aktif** dengan sumber **branch `gh-pages`**. Setiap kali file frontend (`index.html`, `style.css`, `app.js`, `config.js`) berubah di branch `main`, workflow `.github/workflows/deploy-frontend-pages.yml` otomatis mem-publish ulang isinya ke branch `gh-pages`.
+
+- Situs live: <https://muhhaikalbaadilah.github.io/Web_Komik/>
+- Ganti URL API tanpa mengubah/men-deploy ulang kode: buka
+  `https://muhhaikalbaadilah.github.io/Web_Komik/?api=https://URL-API-KAMU`
+  (nilainya disimpan di localStorage browser).
+
+> Catatan: sumber Pages disetel ke **branch `gh-pages`**, bukan "GitHub Actions", karena pengaturan Pages repo ini tidak bisa diubah via API oleh token yang tersedia. Karena itu workflow memakai `peaceiris/actions-gh-pages` untuk menulis ke branch tersebut.
 
 ### Menjalankan lokal
 

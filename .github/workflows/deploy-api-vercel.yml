@@ -1,0 +1,64 @@
+name: Deploy API to Vercel
+
+# Deploy API (folder api-manga) ke Vercel (free tier).
+# Aktif otomatis setelah kamu menambahkan 3 repository secrets:
+#   VERCEL_TOKEN, VERCEL_ORG_ID, VERCEL_PROJECT_ID
+# Selama secret belum diisi, workflow ini hanya melewati (skip) deploy tanpa error.
+on:
+  push:
+    branches: [main, master]
+    paths:
+      - 'api-manga/**'
+      - '.github/workflows/deploy-api-vercel.yml'
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    env:
+      VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+      VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+      VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+    steps:
+      - name: Check Vercel secrets
+        id: check
+        run: |
+          if [ -z "$VERCEL_TOKEN" ] || [ -z "$VERCEL_ORG_ID" ] || [ -z "$VERCEL_PROJECT_ID" ]; then
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+            echo "::notice::Secret Vercel belum diisi - melewati deploy API."
+          else
+            echo "skip=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Checkout
+        if: steps.check.outputs.skip == 'false'
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        if: steps.check.outputs.skip == 'false'
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Install dependencies
+        if: steps.check.outputs.skip == 'false'
+        working-directory: api-manga
+        run: npm install
+
+      - name: Syntax check
+        if: steps.check.outputs.skip == 'false'
+        working-directory: api-manga
+        run: |
+          node --check src/server.js
+          node --check src/router.js
+          echo "All files syntax-valid"
+
+      - name: Deploy to Vercel
+        if: steps.check.outputs.skip == 'false'
+        uses: amondnet/vercel-action@v25
+        with:
+          vercel-token: ${{ secrets.VERCEL_TOKEN }}
+          vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
+          vercel-project-id: ${{ secrets.VERCEL_PROJECT_ID }}
+          working-directory: api-manga
+          vercel-args: '--prod'
