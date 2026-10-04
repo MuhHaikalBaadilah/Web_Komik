@@ -74,9 +74,13 @@ SCRAPER/
 
 ## 🌐 Hosting Gratis (Deploy Online)
 
-> **Status deploy:**
-> - ✅ **Frontend LIVE** → <https://muhhaikalbaadilah.github.io/Web_Komik/> (hosting gratis di GitHub Pages, sumber branch `gh-pages`).
-> - ⏳ **API belum di-deploy** → ikuti **Langkah 1** sekali saja, lalu isi URL-nya (Langkah 2). Tanpa ini, halaman akan tampil tapi data komik belum muncul.
+> **Status deploy (100% gratis):**
+> - ✅ **Frontend LIVE** → <https://muhhaikalbaadilah.github.io/Web_Komik/> (GitHub Pages, otomatis dari branch `gh-pages`)
+> - ✅ **API LIVE** → <https://komikcast-scrapping-hx1kc0.openpouch.sh> (openpouch — tanpa akun/CC)
+>   - ⚠️ Ini **preview gratis 72 jam** → kedaluwarsa **2026-10-07 12:51 UTC**.
+>   - Perpanjang **7 hari** (1 klik) lewat *claim link*, atau pakai akun gratis openpouch agar hidup selama masih dipakai.
+>   - Untuk **permanen**, deploy ke Render/Vercel (Langkah 1) lalu isi URL-nya (Langkah 2).
+> - ℹ️ Provider default diubah ke **mangadex** karena `shinigami` diblokir Cloudflare saat API berjalan di cloud/datacenter (mangadex = API resmi, jalan mulus dari cloud & punya gambar chapter).
 
 Ada 2 bagian yang perlu di-host: **frontend** (statis) dan **API** (Node.js). Berikut skema gratis yang sudah disiapkan di repo ini:
 
@@ -85,7 +89,7 @@ Ada 2 bagian yang perlu di-host: **frontend** (statis) dan **API** (Node.js). Be
 | Frontend (`index.html`, `style.css`, `app.js`, `config.js`) | **GitHub Pages** | Gratis | Statis, auto-deploy via GitHub Actions (sudah ada workflow-nya) |
 | API (`api-manga/`) | **Vercel** (utama) atau **Render** (alternatif) | Gratis | Node/Express, `vercel.json` & `render.yaml` sudah disiapkan |
 
-### Langkah 1 — Deploy API
+### Langkah 1 — Deploy API (opsional: untuk hosting permanen)
 
 **Opsi A: Vercel (direkomendasikan, gratis & cepat)**
 

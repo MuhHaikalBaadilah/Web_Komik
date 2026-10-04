@@ -11,11 +11,13 @@
     'use strict';
 
     // -----------------------------------------------------------------
-    //  ⚠️  GANTI nilai di bawah dengan URL hasil deploy API kamu.
-    //      Contoh: 'https://komikunow-api.vercel.app'
-    //      Kosongkan ('') bila frontend & API berada di domain yang sama.
+    //  URL API produksi (hasil deploy).
+    //  Kosongkan ('') bila frontend & API berada di domain yang sama.
+    //
+    //  ⚠️ Deployment saat ini memakai openpouch (preview gratis 72 jam).
+    //     Setiap kali API di-redeploy, URL-nya berubah -> perbarui nilai ini.
     // -----------------------------------------------------------------
-    var PRODUCTION_API_BASE = '';
+    var PRODUCTION_API_BASE = 'https://komikcast-scrapping-hx1kc0.openpouch.sh';
 
     var STORAGE_KEY = 'komikunow_api_base';
     var params = new URLSearchParams(window.location.search);
@@ -46,6 +48,8 @@
 
     window.KOMIKUNOW_CONFIG = {
         API_BASE: apiBase,
-        DEFAULT_PROVIDER: 'shinigami'
+        // Provider default: mangadex (API resmi, bisa diakses dari cloud/datacenter).
+        // Provider 'shinigami' sering diblokir Cloudflare saat API di-host di cloud.
+        DEFAULT_PROVIDER: 'mangadex'
     };
 })();
