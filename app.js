@@ -351,25 +351,9 @@ function getMangaIdFromHref(href) {
 async function apiFetch(endpoint) {
     const cfg = window.KOMIKUNOW_CONFIG || {};
     const base = cfg.API_BASE || API_BASE;
-    try {
-        const res = await fetch(`${base}${endpoint}`);
-        if (!res.ok) throw new Error(`HTTP ${res.status}`);
-        return res.json();
-    } catch (err) {
-        // Sekali saja: bila base berasal dari override tersimpan (?api=...) yang
-        // sudah mati, hapus simpanannya lalu coba lagi dengan URL default produksi.
-        const freshDefault = cfg.DEFAULT_API_BASE || API_BASE;
-        if (base !== freshDefault) {
-            try {
-                localStorage.removeItem('komikunow_api_base_v2');
-                localStorage.removeItem('komikunow_api_base');
-            } catch (e) { /* ignore */ }
-            const res = await fetch(`${freshDefault}${endpoint}`);
-            if (!res.ok) throw new Error(`HTTP ${res.status}`);
-            return res.json();
-        }
-        throw err;
-    }
+    const res = await fetch(`${base}${endpoint}`);
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    return res.json();
 }
 
 async function fetchLatest(page = 1) {

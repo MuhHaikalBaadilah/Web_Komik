@@ -19,39 +19,39 @@
     // -----------------------------------------------------------------
     var PRODUCTION_API_BASE = 'https://komikcast-scrapping-hx1kc0.openpouch.sh';
 
-    var STORAGE_KEY = 'komikunow_api_base_v2';
-    // Bersihkan override basi dari versi lama (mis. URL API yang sudah mati),
-    // supaya tidak menimpa PRODUCTION_API_BASE yang baru.
-    try { localStorage.removeItem('komikunow_api_base'); } catch (e) { /* ignore */ }
+    var STORAGE_KEY = 'komiku_api_v3';
+
+    // Hapus SEMUA simpanan URL API versi lama supaya tidak ada URL basi yang dipakai.
+    // (Fitur "ingat override ?api=" dihapus sengaja: URL API preview bisa berubah,
+    //  nilai basi yang tersimpan justru bikin komik tidak muncul.)
+    try {
+        var obsolete = ['komikunow_api_base', 'komikunow_api_base_v2', STORAGE_KEY];
+        for (var i = 0; i < obsolete.length; i++) localStorage.removeItem(obsolete[i]);
+    } catch (e) { /* ignore */ }
+
     var params = new URLSearchParams(window.location.search);
     var override = params.get('api');
-
-    // Simpan override bila dikirim lewat query string (?api=...)
-    if (override) {
-        try { localStorage.setItem(STORAGE_KEY, override.replace(/\/+$/, '')); } catch (e) { /* ignore */ }
-    }
-
-    var stored = null;
-    try { stored = localStorage.getItem(STORAGE_KEY); } catch (e) { /* ignore */ }
 
     var isLocal = ['localhost', '127.0.0.1', ''].indexOf(window.location.hostname) !== -1;
     var fallback = isLocal
         ? 'http://localhost:3000'
         : (PRODUCTION_API_BASE || window.location.origin);
 
-    var apiBase = (override || stored || fallback).replace(/\/+$/, '');
+    // Prioritas: default produksi DULU, override hanya bila eksplisit di URL.
+    var apiBase = ((override || fallback) + '').replace(/\/+$/, '');
 
-    if (!isLocal && !PRODUCTION_API_BASE && !override && !stored) {
-        console.warn(
-            '[KomikuNow] PRODUCTION_API_BASE belum diisi di config.js. ' +
-            'Menggunakan same-origin (' + apiBase + '). ' +
-            'Setel URL API agar aplikasi berfungsi, atau buka dengan ?api=https://url-api-kamu'
-        );
+    if (!isLocal && !PRODUCTION_API_BASE && !override) {
+        try {
+            console.warn(
+                '[KomikuNow] PRODUCTION_API_BASE belum diisi di config.js. ' +
+                'Menggunakan same-origin (' + apiBase + ').'
+            );
+        } catch (e) { /* ignore */ }
     }
 
     window.KOMIKUNOW_CONFIG = {
         API_BASE: apiBase,
-        DEFAULT_API_BASE: fallback,
+        DEFAULT_API_BASE: (fallback + '').replace(/\/+$/, ''),
         // Provider default: mangadex (API resmi, bisa diakses dari cloud/datacenter).
         // Provider 'shinigami' sering diblokir Cloudflare saat API di-host di cloud.
         DEFAULT_PROVIDER: 'mangadex'
