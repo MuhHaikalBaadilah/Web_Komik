@@ -6,7 +6,7 @@ Machine-readable source of truth: `deploy.evidence.json`. Do not edit by hand.
 
 | Environment | Status | URL | Commit | Deployed at | Expires | Approved by | Rollback anchor |
 |---|---|---|---|---|---|---|---|
-| preview | live | https://komikcast-scrapping-qmqo5z.openpouch.sh | 6cbc45dbcc | 2026-10-04T13:19:48.809Z | 2026-10-07T13:19:23.658Z | — | — |
+| preview | live | https://komikcast-scrapping-r05irz.openpouch.sh | ceec49bf8b | 2026-10-04T14:05:55.085Z | 2026-10-07T14:05:31.790Z | — | — |
 
 ## Deploy details (latest per environment)
 
@@ -16,10 +16,16 @@ Machine-readable source of truth: `deploy.evidence.json`. Do not edit by hand.
 - Kind: dynamic · Framework: node
 - Start: `node src/server.js`
 - Health at deploy: healthy
-- Expires: 2026-10-07T13:19:23.658Z
+- Expires: 2026-10-07T14:05:31.790Z
 
 ## History (newest first)
 
+- 2026-10-04T14:05:55.085Z · **preview** · live · ceec49bf8b
+- 2026-10-04T14:02:36.491Z · **preview** · live · 574da868dd
+- 2026-10-04T13:59:53.568Z · **preview** · live · 574da868dd
+- 2026-10-04T13:32:18.737Z · **preview** · live · 574da868dd
+- 2026-10-04T13:30:39.100Z · **preview** · live · 574da868dd
+- 2026-10-04T13:27:48.156Z · **preview** · live · 574da868dd
 - 2026-10-04T13:19:48.809Z · **preview** · live · 6cbc45dbcc
 - 2026-10-04T12:52:14.170Z · **preview** · live · 75bf171837 | smoke: passed (2 checks)
 

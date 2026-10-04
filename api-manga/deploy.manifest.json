@@ -11,8 +11,8 @@
   "environments": {
     "preview": {
       "provider": "openpouch-run",
-      "serviceId": "komikcast-scrapping-qmqo5z",
-      "url": "https://komikcast-scrapping-qmqo5z.openpouch.sh"
+      "serviceId": "komikcast-scrapping-r05irz",
+      "url": "https://komikcast-scrapping-r05irz.openpouch.sh"
     }
   }
 }

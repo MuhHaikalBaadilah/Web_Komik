@@ -30,6 +30,7 @@ Thumbs.db
 test_*.js
 *.test.js
 *.spec.js
+_probe*.js
 
 # Build files
 dist/

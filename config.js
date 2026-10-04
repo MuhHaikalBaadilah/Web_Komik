@@ -17,7 +17,7 @@
     //  ⚠️ Deployment saat ini memakai openpouch (preview gratis 72 jam).
     //     Setiap kali API di-redeploy, URL-nya berubah -> perbarui nilai ini.
     // -----------------------------------------------------------------
-    var PRODUCTION_API_BASE = 'https://komikcast-scrapping-qmqo5z.openpouch.sh';
+    var PRODUCTION_API_BASE = 'https://komikcast-scrapping-r05irz.openpouch.sh';
 
     var STORAGE_KEY = 'komiku_api_v3';
 

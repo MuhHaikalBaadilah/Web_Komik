@@ -27,6 +27,9 @@ desktop.ini
 
 # ---------- Local scratch ----------
 _probe*.txt
+_probe*.js
+_harness*.js
+_commitmsg.txt
 *.tmp
 tmp/
 temp/

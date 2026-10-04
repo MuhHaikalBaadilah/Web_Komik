@@ -356,7 +356,24 @@ async function apiFetch(endpoint) {
     return res.json();
 }
 
+// Provider shinigami dipanggil LANGSUNG dari browser oleh shinigami.js
+// (api.shngm.io memberi CORS `access-control-allow-origin: *`).
+// Server API kita kena blokir Cloudflare utk shinigami dari IP cloud,
+// jadi jangan lewat server utk provider ini.
+function useShinigami(provider) {
+    return (provider || state.currentProvider) === 'shinigami'
+        && typeof window.SHINIGAMI !== 'undefined';
+}
+
 async function fetchLatest(page = 1) {
+    if (useShinigami()) {
+        const data = await SHINIGAMI.latest(page);
+        if (data && Array.isArray(data.data)) {
+            state.latestTotalPages = data.length_page || 1;
+            return data.data;
+        }
+        return [];
+    }
     const data = await apiFetch(`/terbaru?page=${page}&provider=${state.currentProvider}`);
     // /terbaru mengembalikan objek paginasi {current_page, length_page, data:[...]}
     // agar konsisten dengan fetch lain, kembalikan array + simpan info halaman.
@@ -368,6 +385,7 @@ async function fetchLatest(page = 1) {
 }
 
 async function searchManga(keyword) {
+    if (useShinigami()) return SHINIGAMI.search(keyword);
     const data = await apiFetch(`/search?keyword=${encodeURIComponent(keyword)}&provider=${state.currentProvider}`);
     const d = data?.data;
     // /search bisa mengembalikan {data:[...]} atau {data:{data:[...]}}
@@ -376,6 +394,7 @@ async function searchManga(keyword) {
 }
 
 async function fetchPopular() {
+    if (useShinigami()) return SHINIGAMI.popular();
     const data = await apiFetch(`/popular?provider=${state.currentProvider}`);
     const d = data?.data;
     if (d && Array.isArray(d.data)) return d.data;
@@ -383,6 +402,7 @@ async function fetchPopular() {
 }
 
 async function fetchRecommended() {
+    if (useShinigami()) return SHINIGAMI.recommended();
     const data = await apiFetch(`/recommended?provider=${state.currentProvider}`);
     const d = data?.data;
     if (d && Array.isArray(d.data)) return d.data;
@@ -390,11 +410,13 @@ async function fetchRecommended() {
 }
 
 async function fetchDetail(mangaUrl, provider) {
+    if (useShinigami(provider)) return SHINIGAMI.detail(mangaUrl);
     const data = await apiFetch(`/detail/${encodeURIComponent(mangaUrl)}?provider=${provider || state.currentProvider}`);
     return data?.data || {};
 }
 
 async function fetchChapter(chapterUrl, provider) {
+    if (useShinigami(provider)) return SHINIGAMI.read(chapterUrl);
     const data = await apiFetch(`/read/${encodeURIComponent(chapterUrl)}?provider=${provider || state.currentProvider}`);
     const chapters = data?.data || [];
     return chapters[0] || { title: '', panel: [] };
@@ -615,19 +637,14 @@ function showRecommended() {
 async function loadHome() {
     showLoading(true);
     try {
-        // Urutan provider: shinigami dulu (cover + komik Indo), lalu mangadex.
-        // Catatan: /terbaru mengembalikan OBJECT paginasi {data:[...]},
-        // sedangkan fetchLatest() sudah menormalkan jadi ARRAY.
+        // Provider default: shinigami (dipanggil LANGSUNG dari browser lewat
+        // shinigami.js, tanpa lewat server API kita yang kena blokir Cloudflare).
+        // fetchLatest() sudah mengembalikan ARRAY.
         let items = [];
-        for (const prov of ['shinigami', 'mangadex']) {
-            state.currentProvider = prov;
-            try {
-                const arr = await fetchLatest(1);
-                if (arr && arr.length) { items = arr; break; }
-                console.warn('[KomikuNow] provider ' + prov + ' kosong, coba berikutnya');
-            } catch (e) {
-                console.warn('[KomikuNow] provider ' + prov + ' gagal:', e?.message);
-            }
+        try {
+            items = await fetchLatest(1);
+        } catch (e) {
+            console.warn('[KomikuNow] fetchLatest gagal:', e?.message);
         }
         if (!items.length) {
             try { console.error('[KomikuNow] API_BASE yang dipakai =', (window.KOMIKUNOW_CONFIG && window.KOMIKUNOW_CONFIG.API_BASE)); } catch (e) {}
@@ -766,13 +783,6 @@ async function openDetail(encodedHref) {
     try {
         const detail = await fetchDetail(mangaId, state.currentProvider);
         if (!detail || Object.keys(detail).length === 0) {
-            const detailMD = await fetchDetail(mangaId, 'mangadex');
-            if (detailMD && Object.keys(detailMD).length > 0) {
-                state.currentProvider = 'mangadex';
-                renderDetailModal(detailMD);
-                showModal('detailModal');
-                return;
-            }
             showToast('Detail komik tidak ditemukan.', true);
             return;
         }
@@ -890,12 +900,7 @@ async function openReader(chapterId, chapterIndex) {
         }
     } catch (err) {
         console.error('Reader error:', err);
-        try {
-            const chapter = await fetchChapter(chapterId, 'mangadex');
-            renderReaderChapter(chapter);
-        } catch (err2) {
-            showToast('Gagal memuat chapter.', true);
-        }
+        showToast('Gagal memuat chapter.', true);
     } finally {
         showLoading(false);
     }
