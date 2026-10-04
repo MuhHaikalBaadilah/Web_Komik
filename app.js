@@ -5,8 +5,14 @@
 // =============================================
 
 // Konfigurasi API
-const API_BASE = 'http://localhost:3000';
-const DEFAULT_PROVIDER = 'shinigami';
+// Diambil dari config.js (otomatis menyesuaikan local vs production).
+// Fallback ke localhost bila config.js tidak dimuat.
+const API_BASE = (window.KOMIKUNOW_CONFIG && window.KOMIKUNOW_CONFIG.API_BASE)
+    ? window.KOMIKUNOW_CONFIG.API_BASE
+    : 'http://localhost:3000';
+const DEFAULT_PROVIDER = (window.KOMIKUNOW_CONFIG && window.KOMIKUNOW_CONFIG.DEFAULT_PROVIDER)
+    ? window.KOMIKUNOW_CONFIG.DEFAULT_PROVIDER
+    : 'shinigami';
 const BOOKMARK_STORAGE_KEY = 'komikunow_bookmarks';
 const READING_HISTORY_KEY = 'komikunow_history';
 

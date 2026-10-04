@@ -59,14 +59,72 @@ http://localhost:8080
 
 ```
 SCRAPER/
-├── api-manga/          # API server (clone dari KanekiCraynet/api-manga)
-│   └── src/
-│       └── server.js   # Main API server (port 3000)
-├── index.html          # Halaman utama aplikasi
-├── style.css           # Styling aplikasi
-├── app.js              # Logika aplikasi & API integration
-└── README.md           # Dokumentasi ini
+├── api-manga/                    # API server (fork dari KanekiCraynet/api-manga)
+│   ├── src/server.js             # Main API server (port 3000)
+│   └── vercel.json               # Konfigurasi deploy Vercel
+├── .github/workflows/
+│   └── deploy-frontend-pages.yml # Auto-deploy frontend ke GitHub Pages
+├── index.html                    # Halaman utama aplikasi
+├── style.css                     # Styling aplikasi
+├── app.js                        # Logika aplikasi & API integration
+├── config.js                     # Runtime config (URL API local/production)
+├── render.yaml                   # (Opsional) deploy API ke Render free tier
+└── README.md                     # Dokumentasi ini
 ```
+
+## 🌐 Hosting Gratis (Deploy Online)
+
+Ada 2 bagian yang perlu di-host: **frontend** (statis) dan **API** (Node.js). Berikut skema gratis yang sudah disiapkan di repo ini:
+
+| Bagian | Platform | Biaya | Kenapa |
+|--------|----------|-------|--------|
+| Frontend (`index.html`, `style.css`, `app.js`, `config.js`) | **GitHub Pages** | Gratis | Statis, auto-deploy via GitHub Actions (sudah ada workflow-nya) |
+| API (`api-manga/`) | **Vercel** (utama) atau **Render** (alternatif) | Gratis | Node/Express, `vercel.json` & `render.yaml` sudah disiapkan |
+
+### Langkah 1 — Deploy API
+
+**Opsi A: Vercel (direkomendasikan, gratis & cepat)**
+
+```bash
+npm install -g vercel      # sekali saja
+cd api-manga
+vercel --prod              # ikuti proses login, root directory = api-manga
+```
+
+Catat URL yang muncul, mis. `https://komikunow-api.vercel.app`. Cek:
+
+```bash
+curl "https://komikunow-api.vercel.app/health"
+```
+
+**Opsi B: Render (gratis, tapi service "tidur" setelah 15 menit idle)**
+
+1. Push repo ini ke GitHub.
+2. Buka <https://dashboard.render.com/blueprints> → **New Blueprint Instance**.
+3. Pilih repo ini → Render otomatis membaca `render.yaml` dan membuat web service `komikunow-api`.
+
+### Langkah 2 — Setel URL API di frontend
+
+Buka `config.js` dan isi `PRODUCTION_API_BASE` dengan URL API dari Langkah 1:
+
+```js
+var PRODUCTION_API_BASE = 'https://komikunow-api.vercel.app';
+```
+
+> Tanpa mengubah file pun bisa: buka frontend dengan `?api=https://komikunow-api.vercel.app` (nilainya disimpan di localStorage).
+
+### Langkah 3 — Deploy Frontend ke GitHub Pages
+
+1. Push perubahan ke branch `main`.
+2. Di GitHub buka **Settings → Pages → Build and deployment → Source: GitHub Actions**.
+3. Workflow `.github/workflows/deploy-frontend-pages.yml` akan otomatis berjalan dan mem-publish frontend.
+4. Situs live di: `https://<username>.github.io/<nama-repo>/`
+
+### Menjalankan lokal
+
+Saat diakses dari `localhost`, `config.js` otomatis memakai `http://localhost:3000`, jadi alur pengembangan lokal seperti biasa (lihat bagian **Cara Menjalankan** di atas).
+
+---
 
 ## 🔌 API Endpoints yang Digunakan
 

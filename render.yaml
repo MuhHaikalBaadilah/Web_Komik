@@ -1,0 +1,19 @@
+# Render Blueprint - Deploy API manga (api-manga) ke free tier Render.
+# Cara pakai:
+#   1. Push file ini ke GitHub (repo root).
+#   2. Buka https://dashboard.render.com/blueprints -> New Blueprint Instance.
+#   3. Pilih repo ini -> Render akan membuat web service sesuai konfigurasi di bawah.
+services:
+  - type: web
+    name: komikunow-api
+    runtime: node
+    plan: free
+    rootDir: api-manga
+    buildCommand: npm install
+    startCommand: npm start
+    healthCheckPath: /health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: NODE_VERSION
+        value: 22.11.0
