@@ -443,6 +443,15 @@ h1, h2, h3, h4, h5, h6 {
     gap: 1.2rem;
 }
 
+/* Grid beranda diisi lewat JS setelah data API datang. Tanpa ruang cadangan,
+   genre & footer "melompat" turun saat kartu muncul (CLS). */
+#latestGrid,
+#popularGrid,
+#recommendedGrid {
+    min-height: 480px;
+    align-content: start;
+}
+
 .manga-card {
     background: var(--bg-secondary);
     border-radius: var(--radius);
