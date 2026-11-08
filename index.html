@@ -5,11 +5,27 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>KomikuNow - Baca Manga, Manhwa, Manhua Gratis</title>
     <meta name="description" content="Baca ribuan judul manga, manhwa, dan manhua terbaru secara gratis. Update setiap hari!">
+    <meta name="theme-color" content="#0F0F14">
+
+    <!-- Sambungkan lebih awal ke host eksternal (hemat ~100-300 ms per host) -->
+    <link rel="preconnect" href="https://api.shngm.io" crossorigin>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="preconnect" href="https://cdnjs.cloudflare.com" crossorigin>
+
     <link rel="stylesheet" href="style.css">
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+
+    <!-- Font & ikon dimuat NON-blocking (media=print -> all saat selesai), font-display=swap -->
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700&display=swap" media="print" onload="this.media='all'">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" media="print" onload="this.media='all'">
+    <noscript>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700&display=swap">
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    </noscript>
 </head>
 <body>
+    <h1 class="sr-only">KomikuNow - Baca Manga, Manhwa, Manhua Gratis</h1>
+
     <!-- Sticky Navbar -->
     <nav class="navbar">
         <div class="nav-container">
@@ -18,15 +34,15 @@
             </a>
             <div class="nav-search">
                 <form onsubmit="handleSearch(event)">
-                    <input type="text" id="searchInput" placeholder="Cari judul komik..." autocomplete="off">
-                    <button type="submit"><i class="fas fa-search"></i></button>
+                    <input type="text" id="searchInput" placeholder="Cari judul komik..." autocomplete="off" aria-label="Cari judul komik">
+                    <button type="submit" aria-label="Cari"><i class="fas fa-search"></i></button>
                 </form>
             </div>
             <ul class="nav-links">
                 <li><a href="#" onclick="showHome()" class="active">Home</a></li>
                 <li><a href="#" onclick="showLatest()">Terbaru</a></li>
                 <li><a href="#" onclick="showPopular()">Populer</a></li>
-                <li><a href="#" onclick="showBookmarks()" id="bookmarkNavLink" title="Bookmark">
+                <li><a href="#" onclick="showBookmarks()" id="bookmarkNavLink" title="Bookmark" aria-label="Bookmark">
                     <i class="fas fa-bookmark"></i> <span id="bookmarkCount">0</span>
                 </a></li>
             </ul>
@@ -42,8 +58,8 @@
                 <div class="hero-track" id="heroTrack">
                     <!-- Hero slides rendered by JS -->
                 </div>
-                <button class="hero-arrow hero-prev" onclick="heroSlide(-1)"><i class="fas fa-chevron-left"></i></button>
-                <button class="hero-arrow hero-next" onclick="heroSlide(1)"><i class="fas fa-chevron-right"></i></button>
+                <button class="hero-arrow hero-prev" onclick="heroSlide(-1)" aria-label="Slide sebelumnya"><i class="fas fa-chevron-left"></i></button>
+                <button class="hero-arrow hero-next" onclick="heroSlide(1)" aria-label="Slide berikutnya"><i class="fas fa-chevron-right"></i></button>
                 <div class="hero-dots" id="heroDots"></div>
             </div>
 
@@ -107,11 +123,11 @@
             <div class="section-header">
                 <h2><i class="fas fa-fire"></i> Update Terbaru</h2>
                 <div class="page-controls">
-                    <button class="btn-icon" onclick="changeLatestPage(-1)" id="prevPage" title="Sebelumnya">
+                    <button class="btn-icon" onclick="changeLatestPage(-1)" id="prevPage" title="Sebelumnya" aria-label="Halaman sebelumnya">
                         <i class="fas fa-chevron-left"></i>
                     </button>
                     <span id="pageInfo" class="page-info">Hal 1</span>
-                    <button class="btn-icon" onclick="changeLatestPage(1)" id="nextPage" title="Berikutnya">
+                    <button class="btn-icon" onclick="changeLatestPage(1)" id="nextPage" title="Berikutnya" aria-label="Halaman berikutnya">
                         <i class="fas fa-chevron-right"></i>
                     </button>
                 </div>
@@ -175,14 +191,14 @@
                 <p>Platform baca manga, manhwa, dan manhua terbaru.</p>
             </div>
             <div class="footer-links">
-                <h4>Navigasi</h4>
+                <h3>Navigasi</h3>
                 <a href="#" onclick="showHome()">Home</a>
                 <a href="#" onclick="showLatest()">Terbaru</a>
                 <a href="#" onclick="showPopular()">Populer</a>
                 <a href="#" onclick="showBookmarks()">Bookmark</a>
             </div>
             <div class="footer-links">
-                <h4>Genre</h4>
+                <h3>Genre</h3>
                 <a href="#" onclick="searchByGenre('Action')">Action</a>
                 <a href="#" onclick="searchByGenre('Romance')">Romance</a>
                 <a href="#" onclick="searchByGenre('Fantasy')">Fantasy</a>
@@ -197,7 +213,7 @@
     <!-- Detail Modal -->
     <div class="modal-overlay" id="detailModal" style="display: none;">
         <div class="modal-content detail-modal">
-            <button class="modal-close" onclick="closeModal('detailModal')"><i class="fas fa-times"></i></button>
+            <button class="modal-close" onclick="closeModal('detailModal')" aria-label="Tutup"><i class="fas fa-times"></i></button>
             <div id="detailContent" class="detail-content">
                 <!-- Detail rendered by JS -->
             </div>
@@ -208,15 +224,15 @@
     <div class="modal-overlay reader-modal-overlay" id="readerModal" style="display: none;">
         <div class="reader-content">
             <div class="reader-header" id="readerHeader">
-                <button class="btn-back" onclick="closeModal('readerModal')">
+                <button class="btn-back" onclick="closeModal('readerModal')" aria-label="Kembali">
                     <i class="fas fa-arrow-left"></i>
                 </button>
                 <div class="reader-title" id="readerTitle">Chapter</div>
                 <div class="reader-controls">
-                    <button class="btn-icon" onclick="changeChapter(-1)" title="Chapter sebelumnya">
+                    <button class="btn-icon" onclick="changeChapter(-1)" title="Chapter sebelumnya" aria-label="Chapter sebelumnya">
                         <i class="fas fa-chevron-left"></i>
                     </button>
-                    <button class="btn-icon" onclick="changeChapter(1)" title="Chapter berikutnya">
+                    <button class="btn-icon" onclick="changeChapter(1)" title="Chapter berikutnya" aria-label="Chapter berikutnya">
                         <i class="fas fa-chevron-right"></i>
                     </button>
                 </div>
@@ -250,9 +266,9 @@
     <div class="error-toast" id="errorToast"></div>
 
     <!-- Runtime config (URL API) - harus dimuat sebelum app.js -->
-    <script src="config.js?v=20261004-06"></script>
+    <script src="config.js?v=20261108-01" defer></script>
     <!-- Client Shinigami langsung dari browser (api.shngm.io, CORS *) -->
-    <script src="shinigami.js?v=20261004-06"></script>
-    <script src="app.js?v=20261004-06"></script>
+    <script src="shinigami.js?v=20261108-01" defer></script>
+    <script src="app.js?v=20261108-01" defer></script>
 </body>
 </html>

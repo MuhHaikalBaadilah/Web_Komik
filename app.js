@@ -33,6 +33,7 @@ const state = {
     heroIndex: 0,
     heroData: [],
     heroInterval: null,
+    heroPrefetchTimer: null,
     lastScrollY: 0
 };
 
@@ -451,12 +452,40 @@ function coverCandidates(manga, detail) {
     return list.concat(extra).filter(u => !seen.has(u) && seen.add(u));
 }
 
-function coverImgTag(manga, detail, title, cls, extraAttrs) {
-    const cands = coverCandidates(manga, detail);
+// opts.priority: 'high'  -> gambar LCP (jangan lazy, fetchpriority=high)
+//                'defer' -> jangan diunduh dulu (src diisi nanti lewat hydrateHeroSlide)
+//                (kosong) -> lazy loading biasa
+// opts.portrait: true    -> utamakan varian potret (lebih cocok utk kartu 2:3)
+function coverImgTag(manga, detail, title, cls, extraAttrs, opts) {
+    opts = opts || {};
+    let cands = coverCandidates(manga, detail);
     const t = safeText(title, 'Unknown');
     if (!cands.length) return `<div class="no-image${cls ? ' ' + cls : ''}"><i class="fas fa-book-open"></i></div>`;
+    if (opts.portrait) {
+        const s0 = detail || manga || {};
+        const portrait = [s0.coverThumb, s0.cover_thumb, manga && manga.coverThumb]
+            .filter(u => typeof u === 'string' && u && !u.includes('nopicture'));
+        if (portrait.length) {
+            const seenP = new Set();
+            cands = portrait.concat(cands).filter(u => !seenP.has(u) && seenP.add(u));
+        }
+    }
     const chain = JSON.stringify(cands).replace(/"/g, '&quot;');
-    return `<img src="${cands[0]}" alt="${t}" loading="lazy" referrerpolicy="no-referrer" data-cands="${chain}" data-idx="0"${extraAttrs ? ' ' + extraAttrs : ''} onerror="coverImgFail(this)">`;
+    let loadAttrs;
+    if (opts.priority === 'high') loadAttrs = `src="${cands[0]}" fetchpriority="high" decoding="async"`;
+    else if (opts.priority === 'defer') loadAttrs = `data-src="${cands[0]}" decoding="async"`;
+    else loadAttrs = `src="${cands[0]}" loading="lazy" decoding="async"`;
+    return `<img ${loadAttrs} alt="${t}" referrerpolicy="no-referrer" data-cands="${chain}" data-idx="0"${extraAttrs ? ' ' + extraAttrs : ''} onerror="coverImgFail(this)">`;
+}
+
+// Isi src untuk gambar hero yang sengaja ditunda (hanya saat slide itu akan dilihat).
+function hydrateHeroSlide(index) {
+    const slide = document.querySelectorAll('#heroTrack .hero-slide')[index];
+    const img = slide && slide.querySelector('img[data-src]');
+    if (img) {
+        img.src = img.getAttribute('data-src');
+        img.removeAttribute('data-src');
+    }
 }
 
 // Dipanggil saat <img> cover gagal dimuat: coba URL cadangan berikutnya,
@@ -486,7 +515,7 @@ function createMangaCard(manga, index, showHot = false) {
     const statusClass = getStatusClass(status);
 
     // Fallback berlapis: thumbnail -> coverThumb -> varian .256 MangaDex.
-    const coverHtml = coverImgTag(manga, null, title, '');
+    const coverHtml = coverImgTag(manga, null, title, '', '', { portrait: true });
 
     return `
         <div class="manga-card" onclick="openDetail('${encodeURIComponent(href)}')" style="animation-delay: ${index * 0.04}s">
@@ -532,7 +561,7 @@ function renderHeroSlides() {
         const rating = manga.rating ? parseFloat(manga.rating).toFixed(1) : null;
         const type = safeText(manga.type, 'Manga');
         const genres = safeText(manga.genre, '');
-        const heroImg = coverImgTag(manga, null, title, '');
+        const heroImg = coverImgTag(manga, null, title, '', '', { priority: i === 0 ? 'high' : 'defer' });
 
         return `
             <div class="hero-slide" onclick="openDetail('${encodeURIComponent(href)}')">
@@ -543,7 +572,7 @@ function renderHeroSlides() {
                         <span class="hero-slide-badge hot">🔥 Hot</span>
                         <span class="hero-slide-badge">${type}</span>
                     </div>
-                    <h3>${title}</h3>
+                    <h2>${title}</h2>
                     <div class="hero-slide-genres">${genres}</div>
                     <button class="btn-read" onclick="event.stopPropagation(); openDetail('${encodeURIComponent(href)}')">
                         <i class="fas fa-play"></i> Baca Sekarang
@@ -553,7 +582,7 @@ function renderHeroSlides() {
     }).join('');
 
     dots.innerHTML = state.heroData.map((_, i) =>
-        `<button class="hero-dot ${i === state.heroIndex ? 'active' : ''}" onclick="gotoHeroSlide(${i})"></button>`
+        `<button class="hero-dot ${i === state.heroIndex ? 'active' : ''}" onclick="gotoHeroSlide(${i})" aria-label="Slide ${i + 1}"></button>`
     ).join('');
 
     updateHeroPosition();
@@ -563,6 +592,12 @@ function updateHeroPosition() {
     const track = document.getElementById('heroTrack');
     if (!track) return;
     track.style.transform = `translateX(-${state.heroIndex * 100}%)`;
+    // Muat gambar slide yang tampil sekarang; slide berikutnya disiapkan agak
+    // belakangan supaya tidak berebut bandwidth dengan gambar LCP.
+    hydrateHeroSlide(state.heroIndex);
+    const nextIdx = (state.heroIndex + 1) % Math.max(state.heroData.length, 1);
+    clearTimeout(state.heroPrefetchTimer);
+    state.heroPrefetchTimer = setTimeout(() => hydrateHeroSlide(nextIdx), 4000);
     document.querySelectorAll('.hero-dot').forEach((d, i) => {
         d.classList.toggle('active', i === state.heroIndex);
     });
@@ -934,7 +969,7 @@ function renderReaderChapter(chapter) {
     }
 
     panelContainer.innerHTML = panels.map((url, i) =>
-        `<img src="${url}" alt="Page ${i + 1}" loading="lazy" referrerpolicy="no-referrer" onerror="this.style.display='none'">`
+        `<img src="${url}" alt="Page ${i + 1}" loading="lazy" decoding="async" referrerpolicy="no-referrer" onerror="this.style.display='none'">`
     ).join('');
 
     const reader = document.querySelector('.reader-content');
