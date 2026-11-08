@@ -49,7 +49,16 @@
         } catch (e) { /* ignore */ }
     }
 
+    // -----------------------------------------------------------------
+    //  Proxy resize gambar (WebP + ukuran sesuai tampilan) untuk cover.
+    //  Cover asli dari API berukuran besar (beberapa MB total) dan bukan
+    //  file milik kita, jadi tidak bisa dikompres di repo. Bila proxy gagal,
+    //  gambar otomatis jatuh ke URL asli. Kosongkan ('') untuk mematikan.
+    // -----------------------------------------------------------------
+    var IMG_PROXY = 'https://wsrv.nl/';
+
     window.KOMIKUNOW_CONFIG = {
+        IMG_PROXY: IMG_PROXY,
         API_BASE: apiBase,
         DEFAULT_API_BASE: (fallback + '').replace(/\/+$/, ''),
         // Provider default: shinigami (cover lengkap, komik Indonesia).

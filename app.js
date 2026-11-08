@@ -452,10 +452,25 @@ function coverCandidates(manga, detail) {
     return list.concat(extra).filter(u => !seen.has(u) && seen.add(u));
 }
 
+// Bungkus URL cover lewat proxy resize (WebP, lebar w). URL asli tetap dipakai
+// sebagai cadangan di rantai onerror bila proxy gagal / dimatikan.
+function proxiedCover(url, w) {
+    const base = (window.KOMIKUNOW_CONFIG && window.KOMIKUNOW_CONFIG.IMG_PROXY) || '';
+    if (!base || !w || !/^https?:\/\//i.test(url) || url.indexOf(base) === 0) return url;
+    return `${base}?url=${encodeURIComponent(url)}&w=${w}&output=webp&q=72&we=1`;
+}
+
+// Lebar gambar hero mengikuti layar (dibulatkan ke kelipatan 160, maks 1280).
+function heroImageWidth() {
+    const px = Math.min(1280, (window.innerWidth || 412) * Math.min(window.devicePixelRatio || 1, 2));
+    return Math.ceil(px / 160) * 160;
+}
+
 // opts.priority: 'high'  -> gambar LCP (jangan lazy, fetchpriority=high)
 //                'defer' -> jangan diunduh dulu (src diisi nanti lewat hydrateHeroSlide)
 //                (kosong) -> lazy loading biasa
 // opts.portrait: true    -> utamakan varian potret (lebih cocok utk kartu 2:3)
+// opts.w:        lebar (px) gambar yang diminta ke proxy resize
 function coverImgTag(manga, detail, title, cls, extraAttrs, opts) {
     opts = opts || {};
     let cands = coverCandidates(manga, detail);
@@ -469,6 +484,10 @@ function coverImgTag(manga, detail, title, cls, extraAttrs, opts) {
             const seenP = new Set();
             cands = portrait.concat(cands).filter(u => !seenP.has(u) && seenP.add(u));
         }
+    }
+    if (opts.w) {
+        const first = proxiedCover(cands[0], opts.w);
+        if (first !== cands[0]) cands = [first].concat(cands);
     }
     const chain = JSON.stringify(cands).replace(/"/g, '&quot;');
     let loadAttrs;
@@ -515,7 +534,7 @@ function createMangaCard(manga, index, showHot = false) {
     const statusClass = getStatusClass(status);
 
     // Fallback berlapis: thumbnail -> coverThumb -> varian .256 MangaDex.
-    const coverHtml = coverImgTag(manga, null, title, '', '', { portrait: true });
+    const coverHtml = coverImgTag(manga, null, title, '', '', { portrait: true, w: 400 });
 
     return `
         <div class="manga-card" onclick="openDetail('${encodeURIComponent(href)}')" style="animation-delay: ${index * 0.04}s">
@@ -561,7 +580,7 @@ function renderHeroSlides() {
         const rating = manga.rating ? parseFloat(manga.rating).toFixed(1) : null;
         const type = safeText(manga.type, 'Manga');
         const genres = safeText(manga.genre, '');
-        const heroImg = coverImgTag(manga, null, title, '', '', { priority: i === 0 ? 'high' : 'defer' });
+        const heroImg = coverImgTag(manga, null, title, '', '', { priority: i === 0 ? 'high' : 'defer', w: heroImageWidth() });
 
         return `
             <div class="hero-slide" onclick="openDetail('${encodeURIComponent(href)}')">

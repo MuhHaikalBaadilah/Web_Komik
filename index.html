@@ -9,6 +9,10 @@
 
     <!-- Sambungkan lebih awal ke host eksternal (hemat ~100-300 ms per host) -->
     <link rel="preconnect" href="https://api.shngm.io" crossorigin>
+    <link rel="preconnect" href="https://wsrv.nl" crossorigin>
+    <!-- Mulai ambil data beranda sejak HTML di-parse (tanpa menunggu script). URL harus
+         sama persis dengan Shinigami.latest(1) di shinigami.js agar dipakai ulang. -->
+    <link rel="preload" as="fetch" href="https://api.shngm.io/v1/manga/list?page=1&page_size=24&sort=latest&sort_order=desc" crossorigin>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link rel="preconnect" href="https://cdnjs.cloudflare.com" crossorigin>
@@ -266,9 +270,9 @@
     <div class="error-toast" id="errorToast"></div>
 
     <!-- Runtime config (URL API) - harus dimuat sebelum app.js -->
-    <script src="config.js?v=20261108-01" defer></script>
+    <script src="config.js?v=20261108-02" defer></script>
     <!-- Client Shinigami langsung dari browser (api.shngm.io, CORS *) -->
-    <script src="shinigami.js?v=20261108-01" defer></script>
-    <script src="app.js?v=20261108-01" defer></script>
+    <script src="shinigami.js?v=20261108-02" defer></script>
+    <script src="app.js?v=20261108-02" defer></script>
 </body>
 </html>
