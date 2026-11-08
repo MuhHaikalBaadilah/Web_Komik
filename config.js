@@ -62,7 +62,12 @@
         API_BASE: apiBase,
         DEFAULT_API_BASE: (fallback + '').replace(/\/+$/, ''),
         // Provider default: shinigami (cover lengkap, komik Indonesia).
-        DEFAULT_PROVIDER: 'shinigami'
+        // Bisa dioverride lewat query string: ?api=https://xxx.vercel.app
+        DEFAULT_PROVIDER: 'shinigami',
+        // Provider tambahan yang sudah terdaftar di api-manga
+        ADDITIONAL_PROVIDERS: {
+          doujindesu: 'DoujinDesu - Hentai manga with Indonesian translation'
+        }
     };
     try { console.info('[KomikuNow] API_BASE =', apiBase); } catch (e) { /* ignore */ }
 })();
