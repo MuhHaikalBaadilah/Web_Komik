@@ -69,7 +69,8 @@
             title: sanitize(item.title || ''),
             href: normalizeUrl('/series/' + item.manga_id),
             thumbnail: item.cover_image_url || item.cover_portrait_url || '',
-            coverThumb: '',
+            // Varian potret: dipakai kartu 2:3 lebih dulu (thumbnail penuh jadi cadangan).
+            coverThumb: item.cover_portrait_url || '',
             type: sanitize(taxName(item.taxonomy, 'Format')),
             chapter: item.latest_chapter_number ? 'Chapter ' + item.latest_chapter_number : '',
             rating: normalizeRating(item.user_rate || item.rank || ''),
