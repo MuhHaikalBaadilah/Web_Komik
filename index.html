@@ -46,6 +46,7 @@
                 <li><a href="#" onclick="showHome()" class="active">Home</a></li>
                 <li><a href="#" onclick="showLatest()">Terbaru</a></li>
                 <li><a href="#" onclick="showPopular()">Populer</a></li>
+                <li><a href="#" onclick="showFilter()">Genre</a></li>
                 <li><a href="#" onclick="showBookmarks()" id="bookmarkNavLink" title="Bookmark" aria-label="Bookmark">
                     <i class="fas fa-bookmark"></i> <span id="bookmarkCount">0</span>
                 </a></li>
@@ -104,6 +105,7 @@
             <div class="section-block">
                 <div class="section-header">
                     <h2><i class="fas fa-tags"></i> Jelajahi Genre</h2>
+                    <a href="#" class="view-all" onclick="showFilter()">Filter lanjutan <i class="fas fa-arrow-right"></i></a>
                 </div>
                 <div class="genre-pills" id="genrePills">
                     <button class="genre-pill" onclick="searchByGenre('Action')">⚔️ Action</button>
@@ -171,6 +173,59 @@
             </div>
         </section>
 
+        <!-- Genre Filter Section -->
+        <section id="filterSection" style="display: none;">
+            <div class="section-header">
+                <h2><i class="fas fa-filter"></i> Filter Genre</h2>
+                <button type="button" class="filter-reset" id="filterReset">Reset</button>
+            </div>
+
+            <div class="filter-panel">
+                <div class="filter-group">
+                    <div class="filter-label" id="filterGenreLabel">Genre <span class="filter-hint">(pilih satu atau lebih)</span></div>
+                    <div class="filter-chips" id="filterChips" role="group" aria-labelledby="filterGenreLabel"></div>
+                    <button type="button" class="filter-more" id="filterMore" hidden></button>
+                </div>
+
+                <div class="filter-selects">
+                    <label class="filter-field">
+                        <span>Cocokkan</span>
+                        <select id="filterMode">
+                            <option value="all">Semua genre</option>
+                            <option value="any">Salah satu</option>
+                        </select>
+                    </label>
+                    <label class="filter-field">
+                        <span>Tipe</span>
+                        <select id="filterType"><option value="">Semua</option></select>
+                    </label>
+                    <label class="filter-field">
+                        <span>Status</span>
+                        <select id="filterStatus">
+                            <option value="">Semua</option>
+                            <option value="ongoing">Ongoing</option>
+                            <option value="completed">Completed</option>
+                        </select>
+                    </label>
+                    <label class="filter-field">
+                        <span>Urutkan</span>
+                        <select id="filterSort">
+                            <option value="latest">Terbaru</option>
+                            <option value="popular">Terpopuler</option>
+                            <option value="rating">Rating tertinggi</option>
+                        </select>
+                    </label>
+                </div>
+            </div>
+
+            <p class="filter-summary" id="filterSummary" role="status" aria-live="polite"></p>
+            <div class="manga-grid" id="filterGrid"></div>
+            <div class="filter-loadmore-wrap">
+                <button type="button" class="btn-secondary" id="filterLoadMore" hidden></button>
+            </div>
+            <p class="filter-note" id="filterNote"></p>
+        </section>
+
         <!-- Bookmarks Section -->
         <section id="bookmarksSection" style="display: none;">
             <div class="section-header">
@@ -199,6 +254,7 @@
                 <a href="#" onclick="showHome()">Home</a>
                 <a href="#" onclick="showLatest()">Terbaru</a>
                 <a href="#" onclick="showPopular()">Populer</a>
+                <a href="#" onclick="showFilter()">Filter Genre</a>
                 <a href="#" onclick="showBookmarks()">Bookmark</a>
             </div>
             <div class="footer-links">
@@ -270,9 +326,9 @@
     <div class="error-toast" id="errorToast"></div>
 
     <!-- Runtime config (URL API) - harus dimuat sebelum app.js -->
-    <script src="config.js?v=20261108-02" defer></script>
+    <script src="config.js?v=20261111-01" defer></script>
     <!-- Client Shinigami langsung dari browser (api.shngm.io, CORS *) -->
-    <script src="shinigami.js?v=20261108-02" defer></script>
-    <script src="app.js?v=20261108-02" defer></script>
+    <script src="shinigami.js?v=20261111-01" defer></script>
+    <script src="app.js?v=20261111-01" defer></script>
 </body>
 </html>

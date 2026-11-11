@@ -1552,6 +1552,190 @@ h1, h2, h3, h4, h5, h6 {
     }
 }
 
+/* =============================================
+   Filter Genre
+   ============================================= */
+.filter-reset {
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--text-secondary);
+    padding: 0.4rem 1rem;
+    border-radius: 50px;
+    font-family: inherit;
+    font-size: 0.78rem;
+    cursor: pointer;
+    transition: var(--transition);
+}
+
+.filter-reset:hover {
+    color: var(--text-primary);
+    border-color: var(--accent-primary);
+}
+
+.filter-panel {
+    background: var(--bg-secondary);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 1.1rem 1.2rem;
+    margin-bottom: 1.2rem;
+    display: flex;
+    flex-direction: column;
+    gap: 1.1rem;
+}
+
+.filter-label {
+    font-size: 0.82rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: 0.6rem;
+}
+
+.filter-hint {
+    font-weight: 400;
+    color: var(--text-secondary);
+}
+
+.filter-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+}
+
+.filter-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45rem;
+    background: var(--bg-elevated);
+    border: 1px solid var(--border);
+    color: var(--text-primary);
+    padding: 0.45rem 0.95rem;
+    border-radius: 50px;
+    font-family: inherit;
+    font-size: 0.78rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: var(--transition);
+}
+
+.filter-chip:hover {
+    border-color: var(--accent-primary);
+}
+
+.filter-chip.active {
+    background: var(--accent-primary);
+    border-color: var(--accent-primary);
+    color: #fff;
+}
+
+.filter-chip-count {
+    font-size: 0.68rem;
+    color: var(--text-secondary);
+}
+
+.filter-chip.active .filter-chip-count {
+    color: #fff;
+}
+
+.filter-chip:focus-visible,
+.filter-more:focus-visible,
+.filter-reset:focus-visible,
+.filter-field select:focus-visible {
+    outline: 2px solid var(--accent-text);
+    outline-offset: 2px;
+}
+
+.filter-more {
+    margin-top: 0.7rem;
+    background: none;
+    border: none;
+    color: var(--accent-text);
+    font-family: inherit;
+    font-size: 0.78rem;
+    cursor: pointer;
+    padding: 0.2rem 0;
+}
+
+.filter-more:hover {
+    text-decoration: underline;
+}
+
+.filter-selects {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 0.8rem;
+}
+
+.filter-field {
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+}
+
+.filter-field select {
+    background: var(--bg-elevated);
+    border: 1px solid var(--border);
+    color: var(--text-primary);
+    padding: 0.55rem 0.7rem;
+    border-radius: 8px;
+    font-family: inherit;
+    font-size: 0.82rem;
+    color-scheme: dark;
+}
+
+.filter-field select:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.filter-summary {
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+    margin-bottom: 1rem;
+    min-height: 1.2em;
+}
+
+.filter-loadmore-wrap {
+    display: flex;
+    justify-content: center;
+    margin: 1.5rem 0 0.5rem;
+}
+
+.filter-loadmore-wrap .btn-secondary {
+    padding: 0.7rem 1.6rem;
+}
+
+.filter-empty-btn {
+    margin: 1rem auto 0;
+}
+
+.filter-note {
+    text-align: center;
+    font-size: 0.72rem;
+    color: var(--text-secondary);
+    margin-top: 1rem;
+}
+
+[hidden] {
+    display: none !important;
+}
+
+@media (max-width: 480px) {
+    .filter-panel {
+        padding: 0.9rem;
+    }
+
+    .filter-selects {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    .filter-chip {
+        padding: 0.4rem 0.8rem;
+        font-size: 0.74rem;
+    }
+}
+
 /* Teks khusus pembaca layar (h1 tersembunyi untuk struktur heading) */
 .sr-only {
     position: absolute;
