@@ -168,30 +168,6 @@ Aplikasi otomatis memilih provider `shinigami` sebagai default karena paling sta
 - **Font Awesome** - Icons
 - **Google Fonts** - Typography Inter
 
-## 🔐 Login Google (Firebase)
-
-Login Google menyinkronkan **bookmark dan riwayat baca** ke semua perangkat. Selama `FIREBASE_CONFIG` di `config.js` kosong, tombol login tidak ditampilkan dan situs berjalan seperti biasa.
-
-1. Buka https://console.firebase.google.com → **Add project** (Analytics boleh dimatikan).
-2. **Build → Authentication → Get started → Sign-in method → Google → Enable** (isi email dukungan, Save).
-3. Di **Authentication → Settings → Authorized domains**, tambahkan `muhhaikalbaadilah.github.io` (`localhost` sudah ada).
-4. **Build → Firestore Database → Create database** (mode produksi, pilih lokasi terdekat, mis. `asia-southeast2`).
-5. Di tab **Rules**, tempel aturan berikut lalu **Publish**:
-   ```
-   rules_version = '2';
-   service cloud.firestore {
-     match /databases/{database}/documents {
-       match /users/{uid} {
-         allow read, write: if request.auth != null && request.auth.uid == uid;
-       }
-     }
-   }
-   ```
-6. **Project settings (ikon roda gigi) → Your apps → Web `</>`** → daftarkan aplikasi, lalu salin nilai `apiKey`, `authDomain`, `projectId`, `appId` ke `FIREBASE_CONFIG` di `config.js`. Nilai ini bukan rahasia (aman di repo publik); keamanan data dijaga oleh aturan Firestore di atas.
-7. Commit dan push `config.js`. Tombol akun muncul di navigasi.
-
-Cara kerja: login pertama di sebuah perangkat **menggabungkan** bookmark lokal dengan yang ada di cloud; setelah itu perubahan dikirim otomatis dan perubahan dari perangkat lain diterima langsung. Keluar dari akun tidak menghapus data di browser. Data tiap akun hanya bisa dibaca akun itu sendiri.
-
 ## ⚠️ Catatan
 
 1. API server harus **berjalan** di port `3000` agar aplikasi berfungsi

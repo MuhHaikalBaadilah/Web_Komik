@@ -50,21 +50,6 @@
                 <li><a href="#" onclick="showBookmarks()" id="bookmarkNavLink" title="Bookmark" aria-label="Bookmark">
                     <i class="fas fa-bookmark"></i> <span id="bookmarkCount">0</span>
                 </a></li>
-                <li class="auth-item" id="authItem" hidden>
-                    <button type="button" class="auth-btn" id="authBtn" aria-label="Masuk dengan Google" aria-haspopup="true" aria-expanded="false">
-                        <i class="fas fa-user" id="authIcon"></i>
-                        <img id="authAvatar" alt="" referrerpolicy="no-referrer" hidden>
-                    </button>
-                    <div class="auth-menu" id="authMenu" hidden>
-                        <div class="auth-menu-user">
-                            <div class="auth-menu-name" id="authName"></div>
-                            <div class="auth-menu-email" id="authEmail"></div>
-                        </div>
-                        <div class="auth-menu-status" id="authStatus" role="status" aria-live="polite"></div>
-                        <button type="button" class="auth-menu-item" id="authSyncNow"><i class="fas fa-rotate"></i> Sinkron sekarang</button>
-                        <button type="button" class="auth-menu-item" id="authSignOut"><i class="fas fa-right-from-bracket"></i> Keluar</button>
-                    </div>
-                </li>
             </ul>
         </div>
     </nav>
@@ -249,11 +234,6 @@
                     <i class="fas fa-trash"></i> Hapus Semua
                 </button>
             </div>
-            <p class="sync-hint" id="syncHint" hidden>
-                <i class="fas fa-cloud"></i> Bookmark tersimpan di browser ini saja.
-                <button type="button" class="sync-hint-btn" id="syncHintBtn">Masuk dengan Google</button>
-                untuk menyinkronkannya ke semua perangkat.
-            </p>
             <div class="manga-grid" id="bookmarksGrid">
                 <!-- Cards rendered by JS -->
             </div>
@@ -349,9 +329,9 @@
     <div class="error-toast" id="errorToast"></div>
 
     <!-- Runtime config (URL API) - harus dimuat sebelum app.js -->
-    <script src="config.js?v=20261111-02" defer></script>
+    <script src="config.js?v=20261111-03" defer></script>
     <!-- Client Shinigami langsung dari browser (api.shngm.io, CORS *) -->
-    <script src="shinigami.js?v=20261111-02" defer></script>
-    <script src="app.js?v=20261111-02" defer></script>
+    <script src="shinigami.js?v=20261111-03" defer></script>
+    <script src="app.js?v=20261111-03" defer></script>
 </body>
 </html>
