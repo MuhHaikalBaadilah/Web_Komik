@@ -1438,12 +1438,14 @@ function updateReaderNavButtons() {
     const exitBtn = document.getElementById('readerBtnExit');
     const nextBtn = document.getElementById('readerBtnNext');
 
-    if (buttons[0]) buttons[0].disabled = state.currentChapterIndex <= 0;
-    if (buttons[1]) buttons[1].disabled = state.currentChapterIndex >= state.currentChapters.length - 1;
+    // Chapters diurutkan descending (index 0 = chapter tertinggi).
+    // Tombol "Sebelumnya" (index++) berarti menuju chapter nomor lebih rendah.
+    if (buttons[0]) buttons[0].disabled = state.currentChapterIndex >= state.currentChapters.length - 1;
+    if (buttons[1]) buttons[1].disabled = state.currentChapterIndex <= 0;
 
-    // Tombol "Keluar Baca" muncul saat berada di chapter terakhir
+    // Tombol "Keluar Baca" muncul saat berada di chapter terakhir (index 0 = chapter tertinggi)
     if (exitBtn && nextBtn) {
-        const isLast = state.currentChapterIndex >= state.currentChapters.length - 1;
+        const isLast = state.currentChapterIndex <= 0;
         if (isLast) {
             nextBtn.style.display = 'none';
             exitBtn.style.display = 'inline-block';
@@ -1479,7 +1481,7 @@ function changeChapter(direction) {
 
     const newIndex = state.currentChapterIndex + direction;
     if (newIndex < 0 || newIndex >= state.currentChapters.length) {
-        showToast(direction > 0 ? 'Ini chapter terakhir.' : 'Ini chapter pertama.', true);
+        showToast(direction > 0 ? 'Ini chapter pertama.' : 'Ini chapter terakhir.', true);
         return;
     }
 
