@@ -643,7 +643,7 @@ function startHeroAutoPlay() {
 // =============================================
 
 function showSection(sectionName) {
-    const sections = ['homeSection', 'latestSection', 'searchSection', 'popularSection', 'recommendedSection', 'bookmarksSection'];
+    const sections = ['homeSection', 'latestSection', 'searchSection', 'popularSection', 'recommendedSection', 'filterSection', 'bookmarksSection'];
     sections.forEach(id => {
         const el = document.getElementById(id);
         if (el) el.style.display = 'none';
@@ -653,13 +653,18 @@ function showSection(sectionName) {
     if (target) target.style.display = 'block';
 
     document.querySelectorAll('.nav-links a').forEach(link => link.classList.remove('active'));
-    const navMap = { homeSection: 0, latestSection: 1, popularSection: 2, bookmarksSection: 3 };
+    const navMap = { homeSection: 0, latestSection: 1, popularSection: 2, filterSection: 3, bookmarksSection: 4 };
     const idx = navMap[sectionName];
     if (idx !== undefined) {
         document.querySelectorAll('.nav-links a')[idx]?.classList.add('active');
     }
 
     state.currentSection = sectionName;
+
+    // Keluar dari halaman filter -> bersihkan hash #filter dari URL.
+    if (sectionName !== 'filterSection' && /^#filter/.test(location.hash)) {
+        try { history.replaceState(null, '', location.pathname + location.search); } catch (e) { /* ignore */ }
+    }
 }
 
 function showHome() {
@@ -815,11 +820,439 @@ async function loadRecommendedGrid() {
     }
 }
 
-function searchByGenre(genre) {
-    closeModal('detailModal');
-    document.getElementById('searchInput').value = genre;
+// =============================================
+// Filter Genre
+// =============================================
+// Penyaringan dilakukan di browser dari "kolam" judul yang dimuat sekali
+// (terbaru + terpopuler, sekitar 250 judul), sehingga tidak bergantung pada
+// parameter filter API yang tidak terdokumentasi. Pilihan filter disimpan di
+// hash URL (#filter?genre=Action,Romance&type=Manhwa) agar bisa dibagikan.
+
+const FILTER_PAGE_SIZE = 24;
+const FILTER_VISIBLE_CHIPS = 16;
+const FILTER_DEFAULT_GENRES = ['Action', 'Romance', 'Comedy', 'Fantasy', 'Drama', 'Adventure',
+    'Horror', 'Martial Arts', 'School Life', 'Sci-Fi', 'Mystery', 'Sports'];
+const FILTER_DEFAULT_TYPES = ['Manga', 'Manhwa', 'Manhua'];
+const FILTER_SORTS = ['latest', 'popular', 'rating'];
+const FILTER_FAR = 1e9; // urutan "tidak ada" (taruh paling akhir)
+
+const filterState = {
+    genres: [],
+    type: '',
+    status: '',
+    sort: 'latest',
+    mode: 'all',
+    shown: FILTER_PAGE_SIZE,
+    showAllChips: false,
+    pool: null,
+    poolPromise: null,
+    uiReady: false
+};
+
+function normKey(s) {
+    return String(s || '').trim().toLowerCase();
+}
+
+function itemGenres(m) {
+    const g = m && m.genre;
+    const arr = Array.isArray(g)
+        ? g.map(x => typeof x === 'string' ? x : ((x && (x.title || x.name)) || ''))
+        : String(g || '').split(',');
+    return arr.map(x => x.trim()).filter(Boolean);
+}
+
+async function loadFilterPool() {
+    if (filterState.pool) return filterState.pool;
+    if (!filterState.poolPromise) {
+        filterState.poolPromise = (async () => {
+            const jobs = [];
+            if (useShinigami()) {
+                for (let p = 1; p <= 3; p++) {
+                    jobs.push({ kind: 'l', page: p, req: SHINIGAMI.list(`page=${p}&page_size=50&sort=latest&sort_order=desc`) });
+                }
+                for (let p = 1; p <= 2; p++) {
+                    jobs.push({ kind: 'p', page: p, req: SHINIGAMI.list(`page=${p}&page_size=50&sort=rank&sort_order=asc`) });
+                }
+            } else {
+                jobs.push({ kind: 'l', page: 1, req: fetchLatest(1) });
+                jobs.push({ kind: 'p', page: 1, req: fetchPopular() });
+            }
+            const results = await Promise.all(jobs.map(j => j.req.then(r => r, () => null)));
+
+            const map = new Map();
+            results.forEach((list, k) => {
+                if (!Array.isArray(list)) return;
+                const job = jobs[k];
+                const base = (job.page - 1) * 50;
+                list.forEach((m, i) => {
+                    const key = m.href || m.title;
+                    if (!key) return;
+                    let cur = map.get(key);
+                    if (!cur) {
+                        cur = Object.assign({}, m, { _l: FILTER_FAR, _p: FILTER_FAR });
+                        map.set(key, cur);
+                    }
+                    const idx = base + i;
+                    if (job.kind === 'l') cur._l = Math.min(cur._l, idx);
+                    else cur._p = Math.min(cur._p, idx);
+                });
+            });
+            if (map.size === 0) throw new Error('Kolam judul kosong');
+            filterState.pool = Array.from(map.values());
+            return filterState.pool;
+        })().catch(err => {
+            filterState.poolPromise = null; // izinkan coba lagi
+            throw err;
+        });
+    }
+    return filterState.poolPromise;
+}
+
+function getFilterFacets() {
+    const pool = filterState.pool || [];
+    const genreMap = new Map();
+    const typeMap = new Map(FILTER_DEFAULT_TYPES.map(t => [normKey(t), t]));
+    pool.forEach(m => {
+        itemGenres(m).forEach(name => {
+            const k = normKey(name);
+            const e = genreMap.get(k);
+            if (e) e.count++;
+            else genreMap.set(k, { name, count: 1 });
+        });
+        if (m.type && !typeMap.has(normKey(m.type))) typeMap.set(normKey(m.type), m.type);
+    });
+    let genres = Array.from(genreMap.values())
+        .sort((a, b) => b.count - a.count || a.name.localeCompare(b.name));
+    if (!genres.length) genres = FILTER_DEFAULT_GENRES.map(name => ({ name, count: 0 }));
+    return { genres, types: Array.from(typeMap.values()) };
+}
+
+function getFilteredItems() {
+    const f = filterState;
+    const sel = f.genres.map(normKey);
+    const items = (f.pool || []).filter(m => {
+        if (sel.length) {
+            const have = itemGenres(m).map(normKey);
+            const ok = f.mode === 'any'
+                ? sel.some(s => have.includes(s))
+                : sel.every(s => have.includes(s));
+            if (!ok) return false;
+        }
+        if (f.type && normKey(m.type) !== normKey(f.type)) return false;
+        if (f.status && !normKey(m.status).includes(normKey(f.status))) return false;
+        return true;
+    });
+    if (f.sort === 'rating') {
+        items.sort((a, b) => (b.rating || 0) - (a.rating || 0) || a._l - b._l);
+    } else if (f.sort === 'popular') {
+        items.sort((a, b) => a._p - b._p || a._l - b._l);
+    } else {
+        items.sort((a, b) => a._l - b._l || a._p - b._p);
+    }
+    return items;
+}
+
+// ----- URL hash -----
+
+function filterToHash() {
+    const f = filterState;
+    const p = new URLSearchParams();
+    if (f.genres.length) p.set('genre', f.genres.join(','));
+    if (f.type) p.set('type', f.type);
+    if (f.status) p.set('status', f.status);
+    if (f.sort !== 'latest') p.set('sort', f.sort);
+    if (f.mode !== 'all') p.set('mode', f.mode);
+    const qs = p.toString();
+    return '#filter' + (qs ? '?' + qs : '');
+}
+
+function syncFilterHash() {
+    if (state.currentSection !== 'filterSection') return;
+    try { history.replaceState(null, '', location.pathname + location.search + filterToHash()); } catch (e) { /* ignore */ }
+}
+
+function applyFilterHash(hash) {
+    if (!/^#filter/.test(hash || '')) return false;
+    const p = new URLSearchParams((hash.split('?')[1]) || '');
+    const f = filterState;
+    f.genres = (p.get('genre') || '').split(',').map(s => s.trim()).filter(Boolean).slice(0, 8);
+    f.type = (p.get('type') || '').slice(0, 30);
+    f.status = ['ongoing', 'completed'].includes(p.get('status')) ? p.get('status') : '';
+    f.sort = FILTER_SORTS.includes(p.get('sort')) ? p.get('sort') : 'latest';
+    f.mode = p.get('mode') === 'any' ? 'any' : 'all';
+    return true;
+}
+
+// ----- Render -----
+
+function renderFilterChips() {
+    const box = document.getElementById('filterChips');
+    if (!box) return;
+    const { genres } = getFilterFacets();
+    const list = genres.slice();
+    filterState.genres.forEach(n => {
+        if (!list.some(g => normKey(g.name) === normKey(n))) list.push({ name: n, count: 0 });
+    });
+    const selected = new Set(filterState.genres.map(normKey));
+    const visible = filterState.showAllChips
+        ? list
+        : list.filter((g, i) => i < FILTER_VISIBLE_CHIPS || selected.has(normKey(g.name)));
+
+    box.textContent = '';
+    visible.forEach(g => {
+        const on = selected.has(normKey(g.name));
+        const b = document.createElement('button');
+        b.type = 'button';
+        b.className = 'filter-chip' + (on ? ' active' : '');
+        b.setAttribute('aria-pressed', on ? 'true' : 'false');
+        b.setAttribute('data-genre', g.name);
+        b.appendChild(document.createTextNode(g.name));
+        if (g.count) {
+            const c = document.createElement('span');
+            c.className = 'filter-chip-count';
+            c.textContent = g.count;
+            b.appendChild(c);
+        }
+        box.appendChild(b);
+    });
+
+    const more = document.getElementById('filterMore');
+    if (more) {
+        const hidden = list.length - visible.length;
+        more.hidden = !(filterState.showAllChips || hidden > 0);
+        more.textContent = filterState.showAllChips ? 'Tampilkan lebih sedikit' : `Tampilkan semua genre (${list.length})`;
+        more.setAttribute('aria-expanded', filterState.showAllChips ? 'true' : 'false');
+    }
+}
+
+function syncFilterControls() {
+    const f = filterState;
+    const typeSel = document.getElementById('filterType');
+    if (typeSel) {
+        const { types } = getFilterFacets();
+        const opts = types.slice();
+        if (f.type && !opts.some(t => normKey(t) === normKey(f.type))) opts.push(f.type);
+        typeSel.textContent = '';
+        const all = document.createElement('option');
+        all.value = '';
+        all.textContent = 'Semua';
+        typeSel.appendChild(all);
+        opts.forEach(t => {
+            const o = document.createElement('option');
+            o.value = t;
+            o.textContent = t;
+            typeSel.appendChild(o);
+        });
+        const match = opts.find(t => normKey(t) === normKey(f.type));
+        typeSel.value = match || '';
+    }
+    const set = (id, v) => { const el = document.getElementById(id); if (el) el.value = v; };
+    set('filterStatus', f.status);
+    set('filterSort', f.sort);
+    set('filterMode', f.mode);
+
+    const modeField = document.getElementById('filterMode');
+    if (modeField) modeField.disabled = f.genres.length < 2;
+    const reset = document.getElementById('filterReset');
+    if (reset) reset.hidden = !(f.genres.length || f.type || f.status || f.sort !== 'latest' || f.mode !== 'all');
+}
+
+function renderFilterResults(append) {
+    const grid = document.getElementById('filterGrid');
+    const summary = document.getElementById('filterSummary');
+    const note = document.getElementById('filterNote');
+    const moreBtn = document.getElementById('filterLoadMore');
+    if (!grid) return;
+
+    const items = getFilteredItems();
+    const f = filterState;
+
+    if (summary) {
+        const parts = [];
+        if (f.genres.length) parts.push(f.genres.join(f.mode === 'any' ? ' atau ' : ' + '));
+        if (f.type) parts.push(f.type);
+        if (f.status) parts.push(f.status === 'ongoing' ? 'Ongoing' : 'Completed');
+        summary.textContent = `${items.length} judul ditemukan` + (parts.length ? ` untuk ${parts.join(' · ')}` : '');
+    }
+    if (note) {
+        const n = (f.pool || []).length;
+        note.textContent = `Disaring dari ${n} judul terbaru dan terpopuler. Tidak menemukan yang dicari? Pakai kolom pencarian di atas.`;
+    }
+
+    if (!items.length) {
+        grid.textContent = '';
+        const box = document.createElement('div');
+        box.className = 'empty-state';
+        box.innerHTML = '<i class="fas fa-filter-circle-xmark"></i>';
+        const p = document.createElement('p');
+        p.textContent = 'Tidak ada judul yang cocok dengan kombinasi filter ini.';
+        box.appendChild(p);
+        if (f.genres.length) {
+            const btn = document.createElement('button');
+            btn.type = 'button';
+            btn.className = 'btn-secondary filter-empty-btn';
+            btn.textContent = `Cari "${f.genres.join(' ')}" dengan kata kunci`;
+            btn.addEventListener('click', searchFromFilter);
+            box.appendChild(btn);
+        }
+        grid.appendChild(box);
+        if (moreBtn) moreBtn.hidden = true;
+        return;
+    }
+
+    const shown = Math.min(f.shown, items.length);
+    if (append) {
+        const from = grid.querySelectorAll('.manga-card').length;
+        grid.insertAdjacentHTML('beforeend',
+            items.slice(from, shown).map((m, i) => createMangaCard(m, i)).join(''));
+    } else {
+        grid.innerHTML = items.slice(0, shown).map((m, i) => createMangaCard(m, i % FILTER_PAGE_SIZE)).join('');
+    }
+    if (moreBtn) {
+        const left = items.length - shown;
+        moreBtn.hidden = left <= 0;
+        moreBtn.textContent = `Muat lebih banyak (${left} lagi)`;
+    }
+}
+
+function renderFilterStatus(kind) {
+    const grid = document.getElementById('filterGrid');
+    const summary = document.getElementById('filterSummary');
+    const moreBtn = document.getElementById('filterLoadMore');
+    if (moreBtn) moreBtn.hidden = true;
+    if (summary) summary.textContent = '';
+    if (!grid) return;
+    if (kind === 'loading') {
+        grid.innerHTML = '<div class="empty-state"><i class="fas fa-spinner fa-spin"></i><p>Memuat daftar judul…</p></div>';
+    } else {
+        grid.textContent = '';
+        const box = document.createElement('div');
+        box.className = 'empty-state';
+        box.innerHTML = '<i class="fas fa-triangle-exclamation"></i>';
+        const p = document.createElement('p');
+        p.textContent = 'Gagal memuat daftar judul. Periksa koneksi lalu coba lagi.';
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'btn-secondary filter-empty-btn';
+        btn.textContent = 'Coba lagi';
+        btn.addEventListener('click', showFilter);
+        box.appendChild(p);
+        box.appendChild(btn);
+        grid.appendChild(box);
+    }
+}
+
+function applyFilter(opts) {
+    opts = opts || {};
+    if (!opts.keepShown) filterState.shown = FILTER_PAGE_SIZE;
+    syncFilterHash();
+    renderFilterChips();
+    syncFilterControls();
+    renderFilterResults(false);
+}
+
+// ----- Aksi -----
+
+function initFilterUI() {
+    if (filterState.uiReady) return;
+    filterState.uiReady = true;
+
+    const chips = document.getElementById('filterChips');
+    if (chips) {
+        chips.addEventListener('click', e => {
+            const btn = e.target.closest('.filter-chip');
+            if (!btn) return;
+            const name = btn.getAttribute('data-genre');
+            const idx = filterState.genres.findIndex(g => normKey(g) === normKey(name));
+            if (idx >= 0) filterState.genres.splice(idx, 1);
+            else filterState.genres.push(name);
+            applyFilter();
+            // pertahankan fokus pada chip yang sama setelah dirender ulang
+            const again = Array.from(chips.querySelectorAll('.filter-chip'))
+                .find(b => normKey(b.getAttribute('data-genre')) === normKey(name));
+            if (again) again.focus({ preventScroll: true });
+        });
+    }
+
+    const bind = (id, key) => {
+        const el = document.getElementById(id);
+        if (el) el.addEventListener('change', () => { filterState[key] = el.value; applyFilter(); });
+    };
+    bind('filterMode', 'mode');
+    bind('filterType', 'type');
+    bind('filterStatus', 'status');
+    bind('filterSort', 'sort');
+
+    const more = document.getElementById('filterMore');
+    if (more) more.addEventListener('click', () => {
+        filterState.showAllChips = !filterState.showAllChips;
+        renderFilterChips();
+    });
+
+    const loadMore = document.getElementById('filterLoadMore');
+    if (loadMore) loadMore.addEventListener('click', () => {
+        filterState.shown += FILTER_PAGE_SIZE;
+        renderFilterResults(true);
+    });
+
+    const reset = document.getElementById('filterReset');
+    if (reset) reset.addEventListener('click', resetFilter);
+}
+
+function resetFilter() {
+    Object.assign(filterState, { genres: [], type: '', status: '', sort: 'latest', mode: 'all', shown: FILTER_PAGE_SIZE });
+    applyFilter();
+}
+
+async function showFilter(e) {
+    // Dipanggil dari <a href="#" onclick="showFilter()">: cegah lompat ke atas / hash "#".
+    const ev = e || window.event;
+    if (ev && ev.preventDefault) ev.preventDefault();
+    initFilterUI();
+    showSection('filterSection');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+    syncFilterHash();
+    syncFilterControls();
+    if (!filterState.pool) {
+        renderFilterChips();
+        renderFilterStatus('loading');
+        try {
+            await loadFilterPool();
+        } catch (err) {
+            console.error('Filter pool error:', err);
+            renderFilterStatus('error');
+            return;
+        }
+    }
+    applyFilter({ keepShown: true });
+}
+
+function searchFromFilter() {
+    const keyword = filterState.genres.join(' ').trim();
+    if (!keyword) return;
+    document.getElementById('searchInput').value = keyword;
     handleSearch({ preventDefault: () => {} });
 }
+
+// Genre pill / tag genre di detail komik sekarang membuka filter genre sungguhan
+// (bukan lagi sekadar pencarian kata kunci).
+function searchByGenre(genre) {
+    closeModal('detailModal');
+    Object.assign(filterState, { genres: [genre], type: '', status: '', shown: FILTER_PAGE_SIZE, showAllChips: false });
+    showFilter();
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+    // Tautan langsung, mis. https://.../Web_Komik/#filter?genre=Action,Romance
+    if (applyFilterHash(location.hash)) showFilter();
+});
+
+// Hash diubah manual / tombol back-forward saat halaman sudah terbuka.
+window.addEventListener('hashchange', () => {
+    if (!/^#filter/.test(location.hash)) return;
+    if (location.hash === filterToHash() && state.currentSection === 'filterSection') return;
+    if (applyFilterHash(location.hash)) showFilter();
+});
 
 // =============================================
 // Detail Modal
