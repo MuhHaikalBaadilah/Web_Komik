@@ -57,7 +57,21 @@
     // -----------------------------------------------------------------
     var IMG_PROXY = 'https://wsrv.nl/';
 
+    // -----------------------------------------------------------------
+    //  Login Google + sinkron bookmark/riwayat (Firebase). Nilai ini BUKAN
+    //  rahasia (identitas proyek web), aman ada di repo publik. Selama kosong,
+    //  tombol login disembunyikan. Cara mengisi: lihat README bagian
+    //  "Login Google (Firebase)".
+    // -----------------------------------------------------------------
+    var FIREBASE_CONFIG = {
+        apiKey: '',
+        authDomain: '',
+        projectId: '',
+        appId: ''
+    };
+
     window.KOMIKUNOW_CONFIG = {
+        FIREBASE_CONFIG: FIREBASE_CONFIG,
         IMG_PROXY: IMG_PROXY,
         API_BASE: apiBase,
         DEFAULT_API_BASE: (fallback + '').replace(/\/+$/, ''),
