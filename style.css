@@ -1736,6 +1736,139 @@ h1, h2, h3, h4, h5, h6 {
     }
 }
 
+/* =============================================
+   Login Google
+   ============================================= */
+.auth-item {
+    position: relative;
+}
+
+.auth-btn {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    border: 1px solid var(--border);
+    background: var(--bg-secondary);
+    color: var(--text-primary);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    padding: 0;
+    transition: var(--transition);
+}
+
+.auth-btn:hover {
+    border-color: var(--accent-primary);
+}
+
+.auth-btn:focus-visible,
+.auth-menu-item:focus-visible,
+.sync-hint-btn:focus-visible {
+    outline: 2px solid var(--accent-text);
+    outline-offset: 2px;
+}
+
+.auth-btn img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.auth-menu {
+    position: absolute;
+    right: 0;
+    top: calc(100% + 0.5rem);
+    min-width: 230px;
+    background: var(--bg-elevated);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    padding: 0.6rem;
+    z-index: 200;
+}
+
+.auth-menu-user {
+    padding: 0.4rem 0.5rem 0.6rem;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 0.4rem;
+}
+
+.auth-menu-name {
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    overflow-wrap: anywhere;
+}
+
+.auth-menu-email {
+    font-size: 0.72rem;
+    color: var(--text-secondary);
+    overflow-wrap: anywhere;
+}
+
+.auth-menu-status {
+    font-size: 0.7rem;
+    color: var(--text-secondary);
+    padding: 0 0.5rem 0.4rem;
+    min-height: 1.1em;
+}
+
+.auth-menu-item {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    width: 100%;
+    background: none;
+    border: none;
+    color: var(--text-primary);
+    font-family: inherit;
+    font-size: 0.8rem;
+    padding: 0.55rem 0.5rem;
+    border-radius: 8px;
+    cursor: pointer;
+    text-align: left;
+}
+
+.auth-menu-item:hover {
+    background: var(--bg-secondary);
+}
+
+.sync-hint {
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+    background: var(--bg-secondary);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 0.7rem 1rem;
+    margin-bottom: 1rem;
+}
+
+.sync-hint-btn {
+    background: none;
+    border: none;
+    color: var(--accent-text);
+    font-family: inherit;
+    font-size: inherit;
+    cursor: pointer;
+    padding: 0;
+    text-decoration: underline;
+}
+
+@media (max-width: 768px) {
+    /* Di HP, menu akun diposisikan terhadap bar navigasi (bukan tombolnya)
+       supaya tidak terpotong di tepi layar. */
+    .nav-container { position: relative; }
+    .auth-item { position: static; }
+    .auth-menu {
+        right: 1rem;
+        left: auto;
+        top: 4.4rem;
+        width: min(280px, calc(100vw - 2rem));
+    }
+}
+
 /* Teks khusus pembaca layar (h1 tersembunyi untuk struktur heading) */
 .sr-only {
     position: absolute;
