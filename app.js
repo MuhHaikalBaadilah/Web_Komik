@@ -1435,8 +1435,24 @@ function renderReaderChapter(chapter) {
 
 function updateReaderNavButtons() {
     const buttons = document.querySelectorAll('.reader-footer .btn-secondary');
+    const exitBtn = document.getElementById('readerBtnExit');
+    const nextBtn = document.getElementById('readerBtnNext');
+
     if (buttons[0]) buttons[0].disabled = state.currentChapterIndex <= 0;
     if (buttons[1]) buttons[1].disabled = state.currentChapterIndex >= state.currentChapters.length - 1;
+
+    // Tombol "Keluar Baca" muncul saat berada di chapter terakhir
+    if (exitBtn && nextBtn) {
+        const isLast = state.currentChapterIndex >= state.currentChapters.length - 1;
+        if (isLast) {
+            nextBtn.style.display = 'none';
+            exitBtn.style.display = 'inline-block';
+            exitBtn.disabled = false;
+        } else {
+            nextBtn.style.display = 'inline-block';
+            exitBtn.style.display = 'none';
+        }
+    }
 }
 
 function resetReaderProgress() {
@@ -1492,6 +1508,11 @@ function changeChapter(direction) {
             showToast('Gagal memuat chapter.', true);
         })
         .finally(() => showLoading(false));
+}
+
+function exitReader() {
+    closeModal('readerModal');
+    showToast('Terima kasih telah membaca!');
 }
 
 // =============================================

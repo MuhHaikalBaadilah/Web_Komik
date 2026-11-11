@@ -1203,6 +1203,18 @@ h1, h2, h3, h4, h5, h6 {
     cursor: not-allowed;
 }
 
+.btn-exit-reader {
+    background: var(--accent-secondary);
+    border-color: var(--accent-secondary);
+    color: #fff;
+}
+
+.btn-exit-reader:hover {
+    background: #b5232f;
+    border-color: #b5232f;
+    color: #fff;
+}
+
 .reader-chapter-label {
     font-family: 'Poppins', sans-serif;
     font-weight: 600;
