@@ -64,7 +64,7 @@
     //  "Login Google (Firebase)".
     // -----------------------------------------------------------------
     var FIREBASE_CONFIG = {
-        apiKey: 'AIzaSyCDi0aZUGBXQRQCZslMInooieDG0YvoJPw',
+        apiKey: '',
         authDomain: 'webkomik-844bd.firebaseapp.com',
         projectId: 'webkomik-844bd',
         appId: '1:687938490743:web:c4f38fad07337715709172'
