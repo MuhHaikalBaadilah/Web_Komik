@@ -57,7 +57,16 @@
     // -----------------------------------------------------------------
     var IMG_PROXY = 'https://wsrv.nl/';
 
+    // -----------------------------------------------------------------
+    //  Tab "Pilihan Admin" di carousel beranda. Isi dengan id komik pilihan Anda
+    //  (UUID di URL seri, mis. .../series/724e04ff-14cd-4172-9ebf-980eaf6b8510/
+    //  -> '724e04ff-14cd-4172-9ebf-980eaf6b8510'), maksimal 8.
+    //  Selama kosong, tab ini menampilkan komik terpopuler.
+    // -----------------------------------------------------------------
+    var ADMIN_PICKS = [];
+
     window.KOMIKUNOW_CONFIG = {
+        ADMIN_PICKS: ADMIN_PICKS,
         IMG_PROXY: IMG_PROXY,
         API_BASE: apiBase,
         DEFAULT_API_BASE: (fallback + '').replace(/\/+$/, ''),

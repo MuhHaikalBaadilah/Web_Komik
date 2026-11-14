@@ -13,6 +13,8 @@
     <!-- Mulai ambil data beranda sejak HTML di-parse (tanpa menunggu script). URL harus
          sama persis dengan Shinigami.latest(1) di shinigami.js agar dipakai ulang. -->
     <link rel="preload" as="fetch" href="https://api.shngm.io/v1/manga/list?page=1&page_size=24&sort=latest&sort_order=desc" crossorigin>
+    <!-- Data slide hero (8 judul rekomendasi) = Shinigami.hero() di shinigami.js -->
+    <link rel="preload" as="fetch" href="https://api.shngm.io/v1/manga/list?page=1&page_size=8&is_recommended=true" crossorigin>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link rel="preconnect" href="https://cdnjs.cloudflare.com" crossorigin>
@@ -29,6 +31,14 @@
 </head>
 <body>
     <h1 class="sr-only">KomikuNow - Baca Manga, Manhwa, Manhua Gratis</h1>
+
+    <!-- Bar pengumuman (bisa ditutup; pilihan tersimpan di browser). Ubah teksnya di sini;
+         ganti kunci "komikunow_notice_v1" (di sini dan di app.js) agar muncul lagi bagi semua orang. -->
+    <div class="notice-bar" id="noticeBar" role="region" aria-label="Pengumuman">
+        <p class="notice-text"><strong>Notice</strong>: Baca manga, manhwa, dan manhua gratis, tanpa perlu login.</p>
+        <button type="button" class="notice-close" id="noticeClose" aria-label="Tutup pengumuman"><i class="fas fa-xmark"></i></button>
+    </div>
+    <script>try{if(localStorage.getItem('komikunow_notice_v1'))document.getElementById('noticeBar').hidden=true}catch(e){}</script>
 
     <!-- Sticky Navbar -->
     <nav class="navbar">
@@ -58,14 +68,20 @@
     <main class="container">
         <!-- Homepage Section -->
         <section id="homeSection">
-            <!-- Hero Carousel -->
-            <div class="hero-carousel" id="heroCarousel">
-                <div class="hero-track" id="heroTrack">
-                    <!-- Hero slides rendered by JS -->
+            <!-- Tab hero + carousel -->
+            <div class="hero-tabs" role="tablist" aria-label="Pilihan komik di carousel">
+                <button type="button" role="tab" class="hero-tab" id="heroTabRec" data-tab="rec" aria-selected="true" aria-controls="heroPanel">Rekomendasi</button>
+                <button type="button" role="tab" class="hero-tab" id="heroTabPick" data-tab="pick" aria-selected="false" aria-controls="heroPanel" tabindex="-1">Pilihan Admin</button>
+            </div>
+            <div id="heroPanel" role="tabpanel" aria-labelledby="heroTabRec">
+                <div class="hero-carousel" id="heroCarousel" role="region" aria-roledescription="carousel" aria-label="Komik pilihan">
+                    <div class="hero-track" id="heroTrack">
+                        <!-- Hero slides rendered by JS -->
+                    </div>
+                    <button type="button" class="hero-arrow hero-prev" onclick="heroSlide(-1)" aria-label="Slide sebelumnya"><i class="fas fa-chevron-left"></i></button>
+                    <button type="button" class="hero-arrow hero-next" onclick="heroSlide(1)" aria-label="Slide berikutnya"><i class="fas fa-chevron-right"></i></button>
+                    <div class="hero-dots" id="heroDots"></div>
                 </div>
-                <button class="hero-arrow hero-prev" onclick="heroSlide(-1)" aria-label="Slide sebelumnya"><i class="fas fa-chevron-left"></i></button>
-                <button class="hero-arrow hero-next" onclick="heroSlide(1)" aria-label="Slide berikutnya"><i class="fas fa-chevron-right"></i></button>
-                <div class="hero-dots" id="heroDots"></div>
             </div>
 
             <!-- Update Terbaru -->
@@ -329,9 +345,9 @@
     <div class="error-toast" id="errorToast"></div>
 
     <!-- Runtime config (URL API) - harus dimuat sebelum app.js -->
-    <script src="config.js?v=20261111-03" defer></script>
+    <script src="config.js?v=20261114-01" defer></script>
     <!-- Client Shinigami langsung dari browser (api.shngm.io, CORS *) -->
-    <script src="shinigami.js?v=20261111-03" defer></script>
-    <script src="app.js?v=20261111-03" defer></script>
+    <script src="shinigami.js?v=20261114-01" defer></script>
+    <script src="app.js?v=20261114-01" defer></script>
 </body>
 </html>
