@@ -80,7 +80,10 @@
             status: item.status === 1 ? 'Ongoing' : 'Completed',
             author: sanitize(taxName(item.taxonomy, 'Author')),
             released: item.release_year || '',
-            description: sanitize(item.description || '')
+            description: sanitize(item.description || ''),
+            // Waktu update terakhir: nama field API belum terverifikasi, jadi coba beberapa kandidat.
+            // Kosong = badge waktu tidak ditampilkan.
+            updatedAt: item.latest_chapter_time || item.latest_chapter_updated_at || item.updated_at || item.last_updated || ''
         };
     }
 

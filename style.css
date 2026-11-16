@@ -761,6 +761,32 @@ h1, h2, h3, h4, h5, h6 {
     z-index: 2;
 }
 
+.manga-cover .type-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.manga-cover .type-badge .flag {
+    width: 16px;
+    height: 11px;
+    border-radius: 2px;
+    flex: none;
+}
+
+.manga-cover .time-badge {
+    position: absolute;
+    bottom: 8px;
+    right: 8px;
+    background: rgba(0, 0, 0, 0.75);
+    color: var(--text-primary);
+    padding: 2px 7px;
+    border-radius: 6px;
+    font-size: 0.68rem;
+    font-weight: 600;
+    z-index: 2;
+}
+
 .manga-cover .rating-badge {
     position: absolute;
     top: 8px;

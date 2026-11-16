@@ -545,6 +545,35 @@ function coverImgFail(img) {
     const cls = img.getAttribute('data-noimg-cls') || 'no-image';
     img.parentElement.innerHTML = `<div class="${cls}"><i class="fas fa-book-open"></i></div>`;
 }
+// Bendera inline SVG (emoji bendera tidak tampil di Windows). Dipilih dari tipe komik.
+const FLAG_SVG = {
+    kr: '<svg class="flag" viewBox="0 0 18 12" aria-hidden="true"><rect width="18" height="12" fill="#fff"/><path d="M6.6 6a2.4 2.4 0 0 1 4.8 0z" fill="#CD2E3A"/><path d="M6.6 6a2.4 2.4 0 0 0 4.8 0z" fill="#0047A0"/><path d="M2 2l2 1M2 3.2l2 1M14 8.8l2 1M14 10l2 1" stroke="#111" stroke-width=".7"/></svg>',
+    cn: '<svg class="flag" viewBox="0 0 18 12" aria-hidden="true"><rect width="18" height="12" fill="#DE2910"/><path d="M4 1.6l.7 2h2.1l-1.7 1.2.6 2L4 5.6 2.3 6.8l.6-2L1.2 3.6h2.1z" fill="#FFDE00"/></svg>',
+    jp: '<svg class="flag" viewBox="0 0 18 12" aria-hidden="true"><rect width="18" height="12" fill="#fff"/><circle cx="9" cy="6" r="3.2" fill="#BC002D"/></svg>'
+};
+
+function flagHtml(type) {
+    const t = String(type || '').toLowerCase();
+    if (t.includes('manhwa')) return FLAG_SVG.kr;
+    if (t.includes('manhua')) return FLAG_SVG.cn;
+    if (t.includes('manga')) return FLAG_SVG.jp;
+    return '';
+}
+
+// "5 mnt" / "3 jam" / "2 hr"; kosong jika tanggal tidak valid atau lebih dari 30 hari.
+function timeAgo(value) {
+    if (!value) return '';
+    const ms = Date.now() - new Date(value).getTime();
+    if (!isFinite(ms) || ms < 0) return '';
+    const m = Math.floor(ms / 60000);
+    if (m < 1) return 'Baru';
+    if (m < 60) return m + ' mnt';
+    const h = Math.floor(m / 60);
+    if (h < 24) return h + ' jam';
+    const d = Math.floor(h / 24);
+    return d <= 30 ? d + ' hr' : '';
+}
+
 function createMangaCard(manga, index, showHot = false) {
     const title = safeText(manga.title, 'Unknown');
     const type = safeText(manga.type, 'Manga');
@@ -555,6 +584,7 @@ function createMangaCard(manga, index, showHot = false) {
     const year = manga.year || manga.released || '';
 
     const statusClass = getStatusClass(status);
+    const ago = timeAgo(manga.updatedAt);
 
     // Fallback berlapis: thumbnail -> coverThumb -> varian .256 MangaDex.
     const coverHtml = coverImgTag(manga, null, title, '', '', { portrait: true, w: 400 });
@@ -563,7 +593,8 @@ function createMangaCard(manga, index, showHot = false) {
         <div class="manga-card" onclick="openDetail('${encodeURIComponent(href)}')" style="animation-delay: ${index * 0.04}s">
             <div class="manga-cover">
                 ${showHot ? '<span class="hot-badge">🔥 Hot</span>' : ''}
-                ${type && type !== 'Manga' ? `<span class="type-badge">${type}</span>` : ''}
+                ${flagHtml(type) ? `<span class="type-badge">${flagHtml(type)}${type !== 'Manga' ? type : ''}</span>` : (type ? `<span class="type-badge">${type}</span>` : '')}
+                ${ago ? `<span class="time-badge">${ago}</span>` : ''}
                 ${rating ? `<span class="rating-badge">⭐ ${rating}</span>` : ''}
                 ${coverHtml}
             </div>
