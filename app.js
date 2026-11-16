@@ -34,6 +34,11 @@ const state = {
     heroData: [],
     heroInterval: null,
     heroPrefetchTimer: null,
+    heroTab: 'rec',
+    heroSets: {},
+    heroPaused: false,
+    heroLoadToken: 0,
+    fetchCache: {},
     lastScrollY: 0
 };
 
@@ -325,6 +330,23 @@ function safeText(text, fallback = '-') {
     return String(text);
 }
 
+// Escape untuk disisipkan ke HTML (teks maupun atribut).
+function escapeHtml(text) {
+    return String(text == null ? '' : text).replace(/[&<>"']/g, c =>
+        ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+}
+
+// Satu permintaan per kunci (hasilnya dipakai ulang oleh hero & grid beranda).
+function once(key, fn) {
+    if (!state.fetchCache[key]) {
+        state.fetchCache[key] = fn().catch(err => {
+            delete state.fetchCache[key];
+            throw err;
+        });
+    }
+    return state.fetchCache[key];
+}
+
 function formatDate(dateStr) {
     if (!dateStr) return '';
     const d = new Date(dateStr);
@@ -460,9 +482,10 @@ function proxiedCover(url, w) {
     return `${base}?url=${encodeURIComponent(url)}&w=${w}&output=webp&q=72&we=1`;
 }
 
-// Lebar gambar hero mengikuti layar (dibulatkan ke kelipatan 160, maks 1280).
+// Lebar gambar hero mengikuti layar: slide aktif ~88% lebar layar
+// (dibulatkan ke kelipatan 160, maks 1280).
 function heroImageWidth() {
-    const px = Math.min(1280, (window.innerWidth || 412) * Math.min(window.devicePixelRatio || 1, 2));
+    const px = Math.min(1280, (window.innerWidth || 412) * 0.88 * Math.min(window.devicePixelRatio || 1, 2));
     return Math.ceil(px / 160) * 160;
 }
 
@@ -494,7 +517,7 @@ function coverImgTag(manga, detail, title, cls, extraAttrs, opts) {
     if (opts.priority === 'high') loadAttrs = `src="${cands[0]}" fetchpriority="high" decoding="async"`;
     else if (opts.priority === 'defer') loadAttrs = `data-src="${cands[0]}" decoding="async"`;
     else loadAttrs = `src="${cands[0]}" loading="lazy" decoding="async"`;
-    return `<img ${loadAttrs} alt="${t}" referrerpolicy="no-referrer" data-cands="${chain}" data-idx="0"${extraAttrs ? ' ' + extraAttrs : ''} onerror="coverImgFail(this)">`;
+    return `<img ${loadAttrs} alt="${escapeHtml(t)}" referrerpolicy="no-referrer" data-cands="${chain}" data-idx="0"${extraAttrs ? ' ' + extraAttrs : ''} onerror="coverImgFail(this)">`;
 }
 
 // Isi src untuk gambar hero yang sengaja ditunda (hanya saat slide itu akan dilihat).
@@ -568,75 +591,266 @@ function renderMangaGrid(containerId, items, showHot = false) {
 // =============================================
 // Hero Carousel
 // =============================================
+// Slide aktif di tengah, slide kiri/kanan mengintip (diredupkan). Posisi dihitung
+// melingkar lewat variabel CSS --off (-2..2), jadi tetangga selalu ada di kedua sisi,
+// termasuk saat berputar dari slide terakhir ke pertama.
+
+const HERO_MAX = 8;
+const HERO_AUTOPLAY_MS = 6000;
+const NOTICE_KEY = 'komikunow_notice_v1';
+
+function heroOffset(i, active, n) {
+    const half = Math.floor(n / 2);
+    return ((i - active + n + half) % n) - half;
+}
+
+function heroTagsHtml(manga) {
+    const list = String(manga.genre || '').split(',').map(g => g.trim()).filter(Boolean);
+    if (!list.length && manga.type) list.push(manga.type);
+    return list.slice(0, 3)
+        .map((g, i) => `<span class="hero-tag hero-tag-${i % 4}">${escapeHtml(g)}</span>`)
+        .join('');
+}
 
 function renderHeroSlides() {
     const track = document.getElementById('heroTrack');
     const dots = document.getElementById('heroDots');
-    if (!track || !state.heroData.length) return;
+    if (!track || !dots) return;
+    const data = state.heroData;
+    const n = data.length;
+    if (!n) {
+        track.textContent = '';
+        dots.textContent = '';
+        return;
+    }
+    if (state.heroIndex >= n) state.heroIndex = 0;
+    const imgW = heroImageWidth();
 
-    track.innerHTML = state.heroData.map((manga, i) => {
+    track.innerHTML = data.map((manga, i) => {
         const title = safeText(manga.title, 'Unknown');
-        const href = manga.href || '';
-        const rating = manga.rating ? parseFloat(manga.rating).toFixed(1) : null;
-        const type = safeText(manga.type, 'Manga');
-        const genres = safeText(manga.genre, '');
-        const heroImg = coverImgTag(manga, null, title, '', '', { priority: i === 0 ? 'high' : 'defer', w: heroImageWidth() });
-
+        const desc = safeText(manga.description, '').trim();
+        const off = heroOffset(i, state.heroIndex, n);
+        const active = off === 0;
+        const cls = active ? 'is-active' : (Math.abs(off) === 1 ? 'is-near' : 'is-far');
+        const img = coverImgTag(manga, null, title, '', '', { priority: active ? 'high' : 'defer', w: imgW });
         return `
-            <div class="hero-slide" onclick="openDetail('${encodeURIComponent(href)}')">
-                ${heroImg}
+            <div class="hero-slide ${cls}" style="--off:${off}" role="group" aria-roledescription="slide" aria-label="${i + 1} dari ${n}"${active ? '' : ' aria-hidden="true"'} onclick="heroSlideClick(${i})">
+                ${img}
                 <div class="hero-slide-content">
-                    <div class="hero-slide-badges">
-                        ${rating ? `<span class="hero-slide-badge rating">⭐ ${rating}</span>` : ''}
-                        <span class="hero-slide-badge hot">🔥 Hot</span>
-                        <span class="hero-slide-badge">${type}</span>
-                    </div>
-                    <h2>${title}</h2>
-                    <div class="hero-slide-genres">${genres}</div>
-                    <button class="btn-read" onclick="event.stopPropagation(); openDetail('${encodeURIComponent(href)}')">
-                        <i class="fas fa-play"></i> Baca Sekarang
-                    </button>
+                    <h2 class="hero-slide-title"><a href="#" class="hero-slide-link"${active ? '' : ' tabindex="-1"'} onclick="event.preventDefault(); event.stopPropagation(); heroSlideClick(${i})">${escapeHtml(title)}</a></h2>
+                    ${desc ? `<p class="hero-slide-desc">${escapeHtml(desc)}</p>` : ''}
+                    <div class="hero-tags">${heroTagsHtml(manga)}</div>
                 </div>
             </div>`;
     }).join('');
 
-    dots.innerHTML = state.heroData.map((_, i) =>
-        `<button class="hero-dot ${i === state.heroIndex ? 'active' : ''}" onclick="gotoHeroSlide(${i})" aria-label="Slide ${i + 1}"></button>`
+    dots.innerHTML = data.map((_, i) =>
+        `<button type="button" class="hero-dot${i === state.heroIndex ? ' active' : ''}" onclick="gotoHeroSlide(${i})" aria-label="Slide ${i + 1}"${i === state.heroIndex ? ' aria-current="true"' : ''}></button>`
     ).join('');
 
-    updateHeroPosition();
+    // fade-in halus saat isi carousel diganti (ganti tab / data baru tiba)
+    track.classList.remove('is-entering');
+    void track.offsetWidth;
+    track.classList.add('is-entering');
+
+    hydrateHeroNeighbors();
+}
+
+// Slide tetangga ikut terlihat (mengintip), jadi gambarnya dimuat juga, tetapi baru
+// setelah gambar slide aktif (LCP) selesai agar tidak berebut bandwidth.
+function hydrateHeroNeighbors() {
+    clearTimeout(state.heroPrefetchTimer);
+    const n = state.heroData.length;
+    if (n < 2) return;
+    const run = () => {
+        state.heroPrefetchTimer = setTimeout(() => {
+            hydrateHeroSlide((state.heroIndex + 1) % n);
+            hydrateHeroSlide((state.heroIndex - 1 + n) % n);
+        }, 150);
+    };
+    const active = document.querySelectorAll('#heroTrack .hero-slide')[state.heroIndex];
+    const img = active && active.querySelector('img');
+    if (!img || img.complete) { run(); return; }
+    let done = false;
+    const go = () => { if (!done) { done = true; run(); } };
+    img.addEventListener('load', go, { once: true });
+    img.addEventListener('error', go, { once: true });
+    state.heroPrefetchTimer = setTimeout(go, 2500);
 }
 
 function updateHeroPosition() {
-    const track = document.getElementById('heroTrack');
-    if (!track) return;
-    track.style.transform = `translateX(-${state.heroIndex * 100}%)`;
-    // Muat gambar slide yang tampil sekarang; slide berikutnya disiapkan agak
-    // belakangan supaya tidak berebut bandwidth dengan gambar LCP.
+    const slides = document.querySelectorAll('#heroTrack .hero-slide');
+    const n = slides.length;
+    if (!n) return;
+    slides.forEach((el, i) => {
+        const off = heroOffset(i, state.heroIndex, n);
+        const active = off === 0;
+        el.style.setProperty('--off', off);
+        el.classList.toggle('is-active', active);
+        el.classList.toggle('is-near', Math.abs(off) === 1);
+        el.classList.toggle('is-far', Math.abs(off) > 1);
+        if (active) el.removeAttribute('aria-hidden'); else el.setAttribute('aria-hidden', 'true');
+        const link = el.querySelector('.hero-slide-link');
+        if (link) link.tabIndex = active ? 0 : -1;
+    });
     hydrateHeroSlide(state.heroIndex);
-    const nextIdx = (state.heroIndex + 1) % Math.max(state.heroData.length, 1);
-    clearTimeout(state.heroPrefetchTimer);
-    state.heroPrefetchTimer = setTimeout(() => hydrateHeroSlide(nextIdx), 4000);
+    hydrateHeroNeighbors();
     document.querySelectorAll('.hero-dot').forEach((d, i) => {
-        d.classList.toggle('active', i === state.heroIndex);
+        const on = i === state.heroIndex;
+        d.classList.toggle('active', on);
+        if (on) d.setAttribute('aria-current', 'true'); else d.removeAttribute('aria-current');
     });
 }
 
-function heroSlide(direction) {
-    if (!state.heroData.length) return;
-    state.heroIndex = (state.heroIndex + direction + state.heroData.length) % state.heroData.length;
+function heroSlide(direction, auto) {
+    const n = state.heroData.length;
+    if (!n) return;
+    state.heroIndex = (state.heroIndex + direction + n) % n;
     updateHeroPosition();
+    if (!auto) startHeroAutoPlay();   // interaksi manual -> mulai hitung ulang
 }
 
 function gotoHeroSlide(index) {
+    if (index < 0 || index >= state.heroData.length) return;
     state.heroIndex = index;
     updateHeroPosition();
+    startHeroAutoPlay();
+}
+
+// Klik slide: slide samping -> jadikan aktif; slide aktif -> buka detail komik.
+function heroSlideClick(index) {
+    const manga = state.heroData[index];
+    if (!manga) return;
+    if (index !== state.heroIndex) { gotoHeroSlide(index); return; }
+    openDetail(encodeURIComponent(manga.href || ''));
+}
+
+function heroHomeVisible() {
+    const el = document.getElementById('homeSection');
+    return !!el && el.style.display !== 'none';
 }
 
 function startHeroAutoPlay() {
     if (state.heroInterval) clearInterval(state.heroInterval);
-    state.heroInterval = setInterval(() => heroSlide(1), 5000);
+    state.heroInterval = null;
+    if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    state.heroInterval = setInterval(() => {
+        if (state.heroPaused || document.hidden || !heroHomeVisible()) return;
+        heroSlide(1, true);
+    }, HERO_AUTOPLAY_MS);
 }
+
+// ----- Tab Rekomendasi / Pilihan Admin -----
+
+function updateHeroTabsUI() {
+    document.querySelectorAll('.hero-tab').forEach(btn => {
+        const on = btn.getAttribute('data-tab') === state.heroTab;
+        btn.setAttribute('aria-selected', on ? 'true' : 'false');
+        btn.tabIndex = on ? 0 : -1;
+        if (on) {
+            const panel = document.getElementById('heroPanel');
+            if (panel) panel.setAttribute('aria-labelledby', btn.id);
+        }
+    });
+}
+
+async function loadHeroSet(tab) {
+    if (state.heroSets[tab] && state.heroSets[tab].length) return state.heroSets[tab];
+    const provider = state.currentProvider;
+    let items = [];
+    if (tab === 'rec') {
+        items = useShinigami()
+            ? await once('hero:' + provider, () => SHINIGAMI.hero())
+            : await once('recommended:' + provider, fetchRecommended);
+    } else {
+        const picks = ((window.KOMIKUNOW_CONFIG || {}).ADMIN_PICKS) || [];
+        if (picks.length && useShinigami()) {
+            try { items = await SHINIGAMI.byIds(picks); } catch (e) { items = []; }
+        }
+        if (!items.length) items = await once('popular:' + provider, fetchPopular);
+    }
+    items = (items || []).filter(m => m && m.title).slice(0, HERO_MAX);
+    if (items.length) state.heroSets[tab] = items;
+    return items;
+}
+
+async function setHeroTab(tab) {
+    if (tab === state.heroTab) return;
+    const previous = state.heroTab;
+    const token = ++state.heroLoadToken;
+    state.heroTab = tab;
+    updateHeroTabsUI();
+    let items = [];
+    try { items = await loadHeroSet(tab); } catch (e) { console.warn('[KomikuNow] hero tab gagal:', e && e.message); }
+    if (token !== state.heroLoadToken) return;      // pengguna sudah pindah tab lagi
+    if (!items.length) {
+        state.heroTab = previous;
+        updateHeroTabsUI();
+        showToast('Gagal memuat daftar komik.', true);
+        return;
+    }
+    state.heroData = items;
+    state.heroIndex = 0;
+    renderHeroSlides();
+    startHeroAutoPlay();
+}
+
+// ----- Inisialisasi (tab, jeda saat disentuh/diarahkan, swipe, bar pengumuman) -----
+
+function initHero() {
+    const tabs = Array.from(document.querySelectorAll('.hero-tab'));
+    tabs.forEach((btn, idx) => {
+        btn.addEventListener('click', () => setHeroTab(btn.getAttribute('data-tab')));
+        btn.addEventListener('keydown', e => {
+            if (e.key !== 'ArrowRight' && e.key !== 'ArrowLeft') return;
+            e.preventDefault();
+            const next = tabs[(idx + (e.key === 'ArrowRight' ? 1 : -1) + tabs.length) % tabs.length];
+            next.focus();
+            setHeroTab(next.getAttribute('data-tab'));
+        });
+    });
+
+    const box = document.getElementById('heroCarousel');
+    if (box) {
+        const pause = () => { state.heroPaused = true; };
+        const resume = () => { state.heroPaused = false; };
+        box.addEventListener('mouseenter', pause);
+        box.addEventListener('mouseleave', resume);
+        box.addEventListener('focusin', pause);
+        box.addEventListener('focusout', resume);
+
+        let sx = 0, sy = 0, tracking = false;
+        box.addEventListener('touchstart', e => {
+            const t = e.touches[0];
+            sx = t.clientX; sy = t.clientY; tracking = true;
+            pause();
+        }, { passive: true });
+        box.addEventListener('touchend', e => {
+            resume();
+            if (!tracking) return;
+            tracking = false;
+            const t = e.changedTouches[0];
+            const dx = t.clientX - sx, dy = t.clientY - sy;
+            if (Math.abs(dx) > 45 && Math.abs(dx) > Math.abs(dy) * 1.5) heroSlide(dx < 0 ? 1 : -1);
+        }, { passive: true });
+        box.addEventListener('touchcancel', () => { tracking = false; resume(); }, { passive: true });
+        box.addEventListener('keydown', e => {
+            if (e.key === 'ArrowLeft') heroSlide(-1);
+            else if (e.key === 'ArrowRight') heroSlide(1);
+        });
+    }
+
+    const bar = document.getElementById('noticeBar');
+    const close = document.getElementById('noticeClose');
+    if (bar && close) {
+        close.addEventListener('click', () => {
+            bar.hidden = true;
+            try { localStorage.setItem(NOTICE_KEY, '1'); } catch (e) { /* ignore */ }
+        });
+    }
+}
+
+document.addEventListener('DOMContentLoaded', initHero);
 
 // =============================================
 // Navigation
@@ -696,34 +910,42 @@ function showRecommended() {
 async function loadHome() {
     showLoading(true);
     try {
-        // Provider default: shinigami (dipanggil LANGSUNG dari browser lewat
-        // shinigami.js, tanpa lewat server API kita yang kena blokir Cloudflare).
-        // fetchLatest() sudah mengembalikan ARRAY.
-        let items = [];
-        try {
-            items = await fetchLatest(1);
-        } catch (e) {
+        // Hero (rekomendasi, payload kecil) dan "Update Terbaru" diminta bersamaan.
+        // Provider default: shinigami dipanggil LANGSUNG dari browser lewat shinigami.js,
+        // tanpa lewat server API kita yang kena blokir Cloudflare.
+        const latestP = fetchLatest(1).catch(e => {
             console.warn('[KomikuNow] fetchLatest gagal:', e?.message);
+            return [];
+        });
+        let heroItems = await loadHeroSet('rec').catch(e => {
+            console.warn('[KomikuNow] hero gagal:', e?.message);
+            return [];
+        });
+        if (!heroItems.length) {
+            // Cadangan: 5 judul terbaru, supaya carousel tidak pernah kosong.
+            heroItems = (await latestP).slice(0, 5);
+            if (heroItems.length) state.heroSets.rec = heroItems;
         }
-        if (!items.length) {
+        if (heroItems.length) {
+            state.heroData = heroItems;
+            renderHeroSlides();
+            startHeroAutoPlay();
+        }
+
+        const items = await latestP;
+        if (!items.length && !heroItems.length) {
             try { console.error('[KomikuNow] API_BASE yang dipakai =', (window.KOMIKUNOW_CONFIG && window.KOMIKUNOW_CONFIG.API_BASE)); } catch (e) {}
             showToast('Gagal memuat data home.', true);
             return;
         }
-        // Hero = data terbaru paling top 5
-        state.heroData = items.slice(0, 5);
-        renderHeroSlides();
-        startHeroAutoPlay();
-
-        // Homepage grids (provider aktif saat ini)
         renderMangaGrid('latestGrid', items.slice(0, 12));
 
-        let popular = [];
-        try { popular = await fetchPopular(); } catch (e) { console.warn('[KomikuNow] popular gagal:', e?.message); }
+        const provider = state.currentProvider;
+        const [popular, recommended] = await Promise.all([
+            once('popular:' + provider, fetchPopular).catch(e => { console.warn('[KomikuNow] popular gagal:', e?.message); return []; }),
+            once('recommended:' + provider, fetchRecommended).catch(e => { console.warn('[KomikuNow] recommended gagal:', e?.message); return []; })
+        ]);
         renderMangaGrid('popularGrid', popular.slice(0, 12), true);
-
-        let recommended = [];
-        try { recommended = await fetchRecommended(); } catch (e) { console.warn('[KomikuNow] recommended gagal:', e?.message); }
         renderMangaGrid('recommendedGrid', recommended.slice(0, 12));
     } catch (err) {
         console.error('Home load error:', err);

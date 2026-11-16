@@ -114,6 +114,29 @@
             return this.list('page=1&page_size=50&is_recommended=true');
         },
 
+        // Slide hero beranda: hanya 8 judul rekomendasi (payload kecil -> LCP lebih cepat).
+        // URL ini harus sama dengan <link rel="preload"> di index.html.
+        hero: function () {
+            return this.list('page=1&page_size=8&is_recommended=true');
+        },
+
+        // Ambil beberapa judul sekaligus lewat id (dipakai tab "Pilihan Admin", lihat ADMIN_PICKS di config.js).
+        byIds: async function (ids) {
+            var out = await Promise.all((ids || []).slice(0, 12).map(async function (raw) {
+                var id = String(raw || '').trim().replace(/\/+$/, '').split('/').pop();
+                if (!id) return null;
+                try {
+                    var json = await getJSON('/manga/detail/' + encodeURIComponent(id));
+                    var item = json.data || {};
+                    if (!item.manga_id) item.manga_id = id;
+                    return mapItem(item);
+                } catch (e) {
+                    return null;
+                }
+            }));
+            return out.filter(Boolean);
+        },
+
         search: function (keyword) {
             return this.list('page=1&page_size=50&q=' + encodeURIComponent(keyword));
         },
