@@ -67,7 +67,7 @@
 
     // Proxy CORS untuk voratoon.js. Awalan URL; alamat target ditambahkan (di-encode) di belakangnya.
     // Contoh: 'https://nama-worker.akun.workers.dev/?url='. Kosong = Voratoon nonaktif.
-    var VORATOON_PROXY = '';
+    var VORATOON_PROXY = 'https://komikunow-proxy.haikalcoy137.workers.dev/?url=';
 
     window.KOMIKUNOW_CONFIG = {
         VORATOON_PROXY: VORATOON_PROXY,
