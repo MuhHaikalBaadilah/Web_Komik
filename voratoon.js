@@ -15,6 +15,10 @@
     'use strict';
 
     var BASE = 'https://v1.voratoon.com';
+    // Alamat sebenarnya setelah pengalihan (dilaporkan Worker lewat header x-final-url).
+    var resolvedBase = '';
+
+    function siteBase() { return resolvedBase || BASE; }
 
     function proxyBase() {
         var c = global.KOMIKUNOW_CONFIG || {};
@@ -41,6 +45,10 @@
         try {
             var res = await fetch(proxy + encodeURIComponent(url), { signal: ctrl.signal });
             if (!res.ok) throw new Error('HTTP ' + res.status);
+            try {
+                var fin = new URL(res.headers.get('x-final-url') || '');
+                if (fin.protocol === 'https:' && (fin.hostname === 'voratoon.com' || /\.voratoon\.com$/.test(fin.hostname))) resolvedBase = fin.origin;
+            } catch (e) { /* header tidak ada: pakai BASE */ }
             return await res.text();
         } finally {
             clearTimeout(timer);
@@ -144,7 +152,7 @@
             // Hanya ada di detail:
             chapters: chapters.map(function (ch) {
                 var idx = chapterIndex(ch);
-                return { index: idx, id: ch.id, title: 'Chapter ' + idx, url: BASE + '/series/' + encodeURIComponent(slug) + '/chapter/' + encodeURIComponent(idx) };
+                return { index: idx, id: ch.id, title: 'Chapter ' + idx, url: siteBase() + '/series/' + encodeURIComponent(slug) + '/chapter/' + encodeURIComponent(idx) };
             }),
             nativeTitle: sanitize(d.nativeTitle || '')
         };
