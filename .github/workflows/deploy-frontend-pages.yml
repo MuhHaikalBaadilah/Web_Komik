@@ -9,6 +9,7 @@ on:
       - 'app.js'
       - 'config.js'
       - 'shinigami.js'
+      - 'voratoon.js'
       - '.nojekyll'
       - '.github/workflows/deploy-frontend-pages.yml'
   workflow_dispatch:
@@ -31,7 +32,7 @@ jobs:
         run: |
           rm -rf _site
           mkdir -p _site
-          cp index.html style.css app.js config.js shinigami.js _site/
+          cp index.html style.css app.js config.js shinigami.js voratoon.js _site/
           touch _site/.nojekyll
           ls -la _site
 
