@@ -90,6 +90,10 @@
                     <h2><i class="fas fa-fire"></i> Update Terbaru</h2>
                     <a href="#" class="view-all" onclick="showLatest()">Lihat semua <i class="fas fa-arrow-right"></i></a>
                 </div>
+                <div class="source-tabs" id="sourceTabs" role="tablist" aria-label="Sumber komik" hidden>
+                    <button type="button" class="source-tab" role="tab" id="srcShinigami" data-src="shinigami" aria-selected="true">Shinigami</button>
+                    <button type="button" class="source-tab" role="tab" id="srcVoratoon" data-src="voratoon" aria-selected="false">Voratoon</button>
+                </div>
                 <div class="manga-grid" id="latestGrid">
                     <!-- Cards rendered by JS -->
                 </div>
@@ -348,7 +352,7 @@
     <script src="config.js?v=20261116-01" defer></script>
     <!-- Client Shinigami langsung dari browser (api.shngm.io, CORS *) -->
     <script src="shinigami.js?v=20261116-01" defer></script>
-    <script src="voratoon.js?v=20261117-01" defer></script>
-    <script src="app.js?v=20261116-01" defer></script>
+    <script src="voratoon.js?v=20261117-02" defer></script>
+    <script src="app.js?v=20261117-02" defer></script>
 </body>
 </html>
