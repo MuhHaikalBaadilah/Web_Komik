@@ -55,12 +55,19 @@
         }
     }
 
-    // Ambil kurung seimbang mulai dari posisi `start` (karakter pembuka `open`).
+    // Ambil blok seimbang mulai dari `start` (karakter pembuka `open`), dengan MENGABAIKAN
+    // kurung yang ada di dalam teks bertanda kutip (judul/sinopsis boleh berisi [ ] { }).
     function balanced(raw, start, open, close) {
-        var depth = 0;
+        var depth = 0, inStr = false;
         for (var i = start; i < raw.length; i++) {
             var ch = raw[i];
-            if (ch === open) depth++;
+            if (inStr) {
+                if (ch === '\\') i++;
+                else if (ch === '"') inStr = false;
+                continue;
+            }
+            if (ch === '"') inStr = true;
+            else if (ch === open) depth++;
             else if (ch === close) {
                 depth--;
                 if (depth === 0) return raw.slice(start, i + 1);
@@ -69,55 +76,52 @@
         return null;
     }
 
-    // Ekstrak payload RSC Next.js (self.__next_f.push) -> objek detail ATAU array daftar.
+    // Kumpulkan teks dari semua self.__next_f.push([1,"..."]) yang berisi initialData.
+    // Literal string di-decode dengan JSON.parse (benar untuk semua escape), bukan replace manual.
+    function rscTexts(html) {
+        var out = [];
+        var re = /self\.__next_f\.push\(\[1,"((?:[^"\\]|\\.)*)"\]\)/g, m;
+        while ((m = re.exec(html)) !== null) {
+            if (m[1].indexOf('initialData') === -1) continue;
+            try { out.push(JSON.parse('"' + m[1] + '"')); } catch (err) { /* lewati chunk rusak */ }
+        }
+        return out;
+    }
+
+    // Ekstrak payload RSC Next.js -> [objek detail] ATAU array daftar.
     function parseRSC(html) {
-        var re = /self\.__next_f\.push\(/g, m, starts = [];
-        while ((m = re.exec(html)) !== null) starts.push(m.index);
+        var texts = rscTexts(html);
+        for (var t = 0; t < texts.length; t++) {
+            var raw = texts[t];
 
-        var inner = '';
-        for (var j = 0; j < starts.length; j++) {
-            var end = j + 1 < starts.length ? starts[j + 1] : html.length;
-            var chunk = html.slice(starts[j], end);
-            if (chunk.indexOf('initialData') !== -1) {
-                var s = chunk.indexOf('[1,"');
-                var e = chunk.lastIndexOf('"]');
-                if (s !== -1 && e !== -1) inner = chunk.slice(s + 4, e);
-                break;
+            // initialData berbentuk objek (halaman detail seri / chapter)
+            var objIdx = raw.indexOf('"initialData":{');
+            if (objIdx !== -1) {
+                var objText = balanced(raw, objIdx + '"initialData":'.length, '{', '}');
+                if (objText) {
+                    try {
+                        var obj = JSON.parse(objText);
+                        var first = obj.series && obj.series[0];
+                        if (first) {
+                            var chapters = (obj.chapters || []).map(function (ch) {
+                                return { chapterIndex: (ch.data && ch.data.index) || ch.chapterIndex, id: ch.id, data: ch.data };
+                            });
+                            return [{ id: first.id, data: first.data, chapters: chapters, updatedAt: first.updatedAt }];
+                        }
+                    } catch (err) { /* lanjut coba bentuk array */ }
+                }
+            }
+
+            // initialData berbentuk array (halaman updates / search)
+            var arrIdx = raw.indexOf('"initialData":[');
+            if (arrIdx !== -1) {
+                var arrText = balanced(raw, arrIdx + '"initialData":'.length, '[', ']');
+                if (arrText) {
+                    try { return JSON.parse(arrText); } catch (err) { /* coba chunk berikutnya */ }
+                }
             }
         }
-        if (!inner) return [];
-
-        var raw = inner
-            .replace(/\\"/g, '"')
-            .replace(/\\\\/g, '\\')
-            .replace(/\\n/g, '\n')
-            .replace(/\\r/g, '')
-            .replace(/[\x00-\x1f]/g, '');
-
-        // initialData berbentuk objek (halaman detail seri)
-        var objIdx = raw.indexOf('"initialData":{');
-        if (objIdx !== -1) {
-            var objText = balanced(raw, objIdx + '"initialData":'.length, '{', '}');
-            if (objText) {
-                try {
-                    var obj = JSON.parse(objText);
-                    var first = obj.series && obj.series[0];
-                    if (first) {
-                        var chapters = (obj.chapters || []).map(function (ch) {
-                            return { chapterIndex: (ch.data && ch.data.index) || ch.chapterIndex, id: ch.id, data: ch.data };
-                        });
-                        return [{ id: first.id, data: first.data, chapters: chapters, updatedAt: first.updatedAt }];
-                    }
-                } catch (err) { /* lanjut coba bentuk array */ }
-            }
-        }
-
-        // initialData berbentuk array (halaman updates / search)
-        var arrIdx = raw.indexOf('"initialData":[');
-        if (arrIdx === -1) return [];
-        var arrText = balanced(raw, arrIdx + '"initialData":'.length, '[', ']');
-        if (!arrText) return [];
-        try { return JSON.parse(arrText); } catch (err) { return []; }
+        return [];
     }
 
     function chapterIndex(ch) {
