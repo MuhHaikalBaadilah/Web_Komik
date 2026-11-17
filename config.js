@@ -65,7 +65,12 @@
     // -----------------------------------------------------------------
     var ADMIN_PICKS = [];
 
+    // Proxy CORS untuk voratoon.js. Awalan URL; alamat target ditambahkan (di-encode) di belakangnya.
+    // Contoh: 'https://nama-worker.akun.workers.dev/?url='. Kosong = Voratoon nonaktif.
+    var VORATOON_PROXY = '';
+
     window.KOMIKUNOW_CONFIG = {
+        VORATOON_PROXY: VORATOON_PROXY,
         ADMIN_PICKS: ADMIN_PICKS,
         IMG_PROXY: IMG_PROXY,
         API_BASE: apiBase,
