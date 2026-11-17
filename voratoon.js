@@ -126,6 +126,7 @@
             .filter(Boolean).join(', ');
         var fmt = String(d.format || 'manga').toLowerCase();
         return {
+            source: 'voratoon',
             title: sanitize(d.title || 'Untitled'),
             href: slug ? '/series/' + slug : '',
             thumbnail: d.coverImage || d.backgroundImage || '',

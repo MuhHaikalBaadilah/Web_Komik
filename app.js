@@ -34,6 +34,8 @@ const state = {
     heroData: [],
     heroInterval: null,
     heroPrefetchTimer: null,
+    homeSource: 'shinigami',
+    homeLatest: null,
     heroTab: 'rec',
     heroSets: {},
     heroPaused: false,
@@ -590,7 +592,7 @@ function createMangaCard(manga, index, showHot = false) {
     const coverHtml = coverImgTag(manga, null, title, '', '', { portrait: true, w: 400 });
 
     return `
-        <div class="manga-card" onclick="openDetail('${encodeURIComponent(href)}')" style="animation-delay: ${index * 0.04}s">
+        <div class="manga-card" onclick="${manga.source === 'voratoon' ? `openVoratoonDetail('${encodeURIComponent(getMangaIdFromHref(href))}')` : `openDetail('${encodeURIComponent(href)}')`}" style="animation-delay: ${index * 0.04}s">
             <div class="manga-cover">
                 ${showHot ? '<span class="hot-badge">🔥 Hot</span>' : ''}
                 ${flagHtml(type) ? `<span class="type-badge">${flagHtml(type)}${type !== 'Manga' ? type : ''}</span>` : (type ? `<span class="type-badge">${type}</span>` : '')}
@@ -969,7 +971,8 @@ async function loadHome() {
             showToast('Gagal memuat data home.', true);
             return;
         }
-        renderMangaGrid('latestGrid', items.slice(0, 12));
+        state.homeLatest = items.slice(0, 12);
+        if (state.homeSource === 'shinigami') renderMangaGrid('latestGrid', state.homeLatest);
 
         const provider = state.currentProvider;
         const [popular, recommended] = await Promise.all([
@@ -1506,6 +1509,96 @@ window.addEventListener('hashchange', () => {
     if (location.hash === filterToHash() && state.currentSection === 'filterSection') return;
     if (applyFilterHash(location.hash)) showFilter();
 });
+
+// =============================================
+// Sumber Voratoon (lihat voratoon.js + worker/)
+// =============================================
+
+function updateSourceTabsUI() {
+    document.querySelectorAll('.source-tab').forEach(btn => {
+        btn.setAttribute('aria-selected', btn.dataset.src === state.homeSource ? 'true' : 'false');
+    });
+}
+
+async function setHomeSource(src) {
+    if (src === state.homeSource) return;
+    state.homeSource = src;
+    updateSourceTabsUI();
+    const grid = document.getElementById('latestGrid');
+    if (src === 'shinigami') {
+        if (state.homeLatest) renderMangaGrid('latestGrid', state.homeLatest);
+        return;
+    }
+    grid.innerHTML = '<div class="empty-state"><p>Memuat dari Voratoon…</p></div>';
+    try {
+        const items = (await once('voratoon:updates', () => VORATOON.updates())).slice(0, 12);
+        if (state.homeSource !== 'voratoon') return; // pengguna sudah pindah tab
+        if (!items.length) throw new Error('kosong');
+        renderMangaGrid('latestGrid', items);
+    } catch (err) {
+        console.error('Voratoon error:', err);
+        if (state.homeSource !== 'voratoon') return;
+        grid.innerHTML = '<div class="empty-state"><p>Gagal memuat Voratoon. Coba lagi nanti.</p></div>';
+    }
+}
+
+function initSourceTabs() {
+    const wrap = document.getElementById('sourceTabs');
+    if (!wrap || !window.VORATOON || !VORATOON.enabled()) return; // tanpa proxy: tab tetap tersembunyi
+    wrap.hidden = false;
+    wrap.querySelectorAll('.source-tab').forEach(btn => {
+        btn.addEventListener('click', () => setHomeSource(btn.dataset.src));
+    });
+}
+document.addEventListener('DOMContentLoaded', initSourceTabs);
+
+// Detail Voratoon: daftar chapter membuka halaman chapter di voratoon.com (tab baru),
+// karena pembaca bawaan belum bisa mengurai gambar halaman Voratoon.
+async function openVoratoonDetail(encodedSlug) {
+    const slug = decodeURIComponent(encodedSlug);
+    showLoading(true);
+    try {
+        const d = await VORATOON.detail(slug);
+        state.currentDetail = null;
+        state.currentMangaUrl = '';
+        state.currentChapters = [];
+        const title = safeText(d.title, 'Unknown');
+        const genres = d.genre ? d.genre.split(',').map(g => g.trim()).filter(Boolean) : [];
+        const chapters = d.chapters || [];
+        const coverHtml = coverImgTag(d, null, title, 'detail-no-image', '', { portrait: true, w: 400 });
+        document.getElementById('detailContent').innerHTML = `
+            <div class="detail-header">
+                <div class="detail-cover">${coverHtml}</div>
+                <div class="detail-info">
+                    <h2>${escapeHtml(title)}</h2>
+                    <div class="detail-badges">
+                        <span class="detail-badge primary">${escapeHtml(d.type)}</span>
+                        <span class="detail-badge">${escapeHtml(d.status)}</span>
+                        ${d.rating ? `<span class="detail-badge warning">⭐ ${parseFloat(d.rating).toFixed(1)}</span>` : ''}
+                        ${d.author ? `<span class="detail-badge">✍️ ${escapeHtml(d.author)}</span>` : ''}
+                    </div>
+                    ${genres.length ? `<div class="detail-genres">${genres.map(g => `<span class="genre-tag">${escapeHtml(g)}</span>`).join('')}</div>` : ''}
+                    <div class="detail-description">${escapeHtml(safeText(d.description, 'Tidak ada deskripsi.'))}</div>
+                </div>
+            </div>
+            <div class="chapter-section">
+                <h3><i class="fas fa-list"></i> Daftar Chapter (${chapters.length})</h3>
+                <div class="chapter-list">
+                    ${chapters.map(ch => `
+                        <a class="chapter-item is-link" href="${escapeHtml(ch.url)}" target="_blank" rel="noopener noreferrer">
+                            <div class="chapter-info"><span class="chapter-number">#${escapeHtml(String(ch.index))}</span><span class="chapter-title">${escapeHtml(ch.title)}</span></div>
+                            <span class="chapter-date"><i class="fas fa-arrow-up-right-from-square"></i></span>
+                        </a>`).join('') || '<div class="empty-state"><p>Belum ada chapter.</p></div>'}
+                </div>
+            </div>`;
+        showModal('detailModal');
+    } catch (err) {
+        console.error('Voratoon detail error:', err);
+        showToast('Gagal memuat detail dari Voratoon.', true);
+    } finally {
+        showLoading(false);
+    }
+}
 
 // =============================================
 // Detail Modal
